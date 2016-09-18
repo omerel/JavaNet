@@ -51,6 +51,7 @@ public class Main extends Application {
 	private static final int ACK = 4;
 	private static final int GET_LEVEL_AND_MODE = 5;
 	private static final int QUIT_FROM_GAME = 6;
+	private static final int TIMER = 7;
 
 	private int request;
 
@@ -251,7 +252,9 @@ public class Main extends Application {
 	}
 
 	class HandleServer implements Runnable {
-
+		
+		Game game;
+		
 		public HandleServer() {
 		};
 
@@ -270,7 +273,6 @@ public class Main extends Application {
 					}
 				} else
 					alertDialog("Information Dialog", "Please fill all the properties");
-
 			});
 
 			while (true) {
@@ -281,7 +283,7 @@ public class Main extends Application {
 						break;
 					case START_GAME:
 						Platform.runLater(() -> {
-							new Game();
+							game = new Game();
 						});
 						break;
 					case GET_SCORE:
@@ -306,6 +308,14 @@ public class Main extends Application {
 						toServer2.flush();
 						toServer2.writeUTF(mMode);
 						break;
+					case QUIT_FROM_GAME:
+						Platform.runLater(() -> {
+							game.quitGame();
+						});
+						break;
+					case TIMER:
+						String time = fromServer.readUTF();
+						break;
 					default:
 						break;
 					}
@@ -315,42 +325,6 @@ public class Main extends Application {
 				}
 			}
 		}
-	}
-
-	private void openGame() {
-		// Hide primaryStage
-		primaryStage.hide();
-		// create components
-
-		BorderPane pane = new BorderPane();
-		Button btQuitFromGame = new Button("Quit");
-		pane.setBottom(btQuitFromGame);
-		BorderPane.setAlignment(btQuitFromGame, Pos.CENTER);
-
-		Stage stage = new Stage();
-		stage.setScene(new Scene(pane, 800, 600)); // Place the scene in the
-		stage.setTitle("3D GUN");
-		stage.show(); // Display the stage
-		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-			public void handle(WindowEvent event) {
-				stage.close();
-				primaryStage.show();
-			}
-		});
-
-		btQuitFromGame.setOnAction(e -> {
-			// TODO store score
-			stage.close();
-			primaryStage.show();
-			try {
-				toServer2.flush();
-				toServer2.writeInt(QUIT_FROM_GAME);
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-
-		});
 	}
 
 	private String getCurrentMode() {
@@ -380,7 +354,7 @@ public class Main extends Application {
 	public static void main(String[] args) {
 		launch(args);
 	}
-	
+
 	public void updateScore(int score){
 		try {
 			toServer2.flush();
@@ -393,6 +367,7 @@ public class Main extends Application {
 	}
 
 	public class Game {
+		
 		final static int MAX_BALLOON_RADIUS = 60;
 		final static int MIN_BALLOON_RADIUS = 17;
 		int BALLOON_RADIUS = 25;
@@ -409,6 +384,7 @@ public class Main extends Application {
 		Line gun;
 		int score = 0;
 		int myClientNumber = 0;
+		Stage stage;
 
 		class SmallBall extends Circle {
 			private int length;
@@ -437,21 +413,29 @@ public class Main extends Application {
 
 		public  Game(){
 			primaryStage.hide();
-			Stage stage = new Stage();
+			stage = new Stage();
 			stage.setTitle("Shooting Game V1.0");
 			Scene scene = new Scene(pane, 500, 500, Color.ALICEBLUE);
+			Text txTimer = new Text();
+			txTimer.setX(0);
+			txTimer.setY(0);
+			txTimer.setStyle("-fx-font: 18 arial;");
 			Text text = new Text();
 			text.setX(5);
-			//text.yProperty().bind(pane.heightProperty());
 			text.setY(400);
 			text.setStyle("-fx-font: 18 arial;");
 			Button btQuitFromGame = new Button("Quit");
 			btQuitFromGame.setStyle("-fx-font: 18 arial;-fx-base: red;");
 			btQuitFromGame.setLayoutX(5);
 			btQuitFromGame.setLayoutY(450);
+			Timeline timer;
+			timer = new Timeline(new KeyFrame(new Duration(5000),ae -> quitGame()));
+			timer.play();
+			txTimer.setText(timer.toString());
 			pane.getChildren().add(0, getNewBalloon());
 			pane.getChildren().add(1, text);
 			pane.getChildren().add(2, btQuitFromGame);
+			pane.getChildren().add(3, txTimer);
 			gun = new Line();
 			gun.startXProperty().bind(pane.widthProperty().divide(2));
 			gun.startYProperty().bind(pane.heightProperty());
@@ -471,22 +455,8 @@ public class Main extends Application {
 					e1.printStackTrace();
 				}
 			});
-			
 			pane.getChildren().add(gun);
 			setANDrequestFocus();
-			pane.setOnMousePressed(e -> {
-				if (overlaps(((Circle) (pane.getChildren().get(0))), new Circle(e.getSceneX(), e.getSceneY(), 1))) {
-					if (e.isPrimaryButtonDown() && (BALLOON_RADIUS < MAX_BALLOON_RADIUS)
-							&& (BALLOON_RADIUS + ((Circle) (pane.getChildren().get(0))).getCenterX()) < pane.getWidth()
-							&& (((Circle) (pane.getChildren().get(0))).getCenterY() - BALLOON_RADIUS) > 0) {
-						BALLOON_RADIUS++;
-						setANDrequestFocus();
-					} else if (e.isSecondaryButtonDown() && BALLOON_RADIUS > MIN_BALLOON_RADIUS) {
-						BALLOON_RADIUS--;
-						setANDrequestFocus();
-					}
-				}
-			});
 			pane.setOnKeyPressed(e -> {
 				if (e.getCode() == KeyCode.LEFT) {
 					if (angle < 180)
@@ -505,6 +475,7 @@ public class Main extends Application {
 			EventHandler<ActionEvent> eventHandler = e -> {
 				game();
 				setANDrequestFocus();
+				txTimer.setText(timer.toString());
 			};
 			Timeline animation = new Timeline(new KeyFrame(Duration.millis(DELAY), eventHandler));
 			animation.setCycleCount(Timeline.INDEFINITE);
@@ -521,6 +492,17 @@ public class Main extends Application {
 			
 		}
 	
+		public void quitGame(){
+			stage.close();
+			primaryStage.show();
+			try {
+				toServer2.flush();
+				toServer2.writeInt(QUIT_FROM_GAME);
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
 		private void game() {
 			((Text) (pane.getChildren().get(1))).setText("User name: "+mUserName+"\nMode: "+mMode+
 					"\nLevel: "+mLevel+"\n");

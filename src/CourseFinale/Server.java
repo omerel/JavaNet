@@ -11,7 +11,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -34,6 +37,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.Duration;
 
 public class Server extends Application {
 
@@ -45,6 +49,7 @@ public class Server extends Application {
 	private static final int ACK = 4;
 	private static final int GET_LEVEL_AND_MODE = 5;
 	private static final int QUIT_FROM_GAME = 6;
+	private static final int TIMER = 7;
 
 	private int request;
 
@@ -166,6 +171,7 @@ public class Server extends Application {
 		private String userName;
 		private DataInputStream inputFromClient;
 		private DataOutputStream outputToClient;
+		private Duration timer;
 
 		// Construct a thread clientNo
 		public HandleAClient(Socket socket, int clientNo) {
@@ -264,7 +270,7 @@ public class Server extends Application {
 							// TODO stop time
 							// save final result
 							Platform.runLater(() -> {
-								taLog.appendText("client(" + clientNo + ") quit the game before its ends. "
+								taLog.appendText("client(" + clientNo + ") finished the game "
 										+ "final score is:" + currentScore + "\n");
 							});
 							break;
@@ -273,6 +279,8 @@ public class Server extends Application {
 							Platform.runLater(() -> {
 								taLog.appendText("client(" + clientNo + ") new score is: " + currentScore + "\n");
 							});
+							break;
+						default:
 							break;
 
 						}
@@ -284,7 +292,7 @@ public class Server extends Application {
 			}
 		}
 
-		void StartGame() {
+		private void StartGame() {
 			currentScore = 0;
 			try {
 				// Start game
@@ -292,12 +300,10 @@ public class Server extends Application {
 				outputToClient.writeInt(GET_LEVEL_AND_MODE);
 				outputToClient.flush();
 				outputToClient.writeInt(START_GAME);
-				// TODO Start timer thread
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
 	}
 
