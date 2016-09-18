@@ -252,9 +252,9 @@ public class Main extends Application {
 	}
 
 	class HandleServer implements Runnable {
-		
+
 		Game game;
-		
+
 		public HandleServer() {
 		};
 
@@ -328,26 +328,24 @@ public class Main extends Application {
 	}
 
 	private String getCurrentMode() {
-		if (rbTrainig.isSelected()){
+		if (rbTrainig.isSelected()) {
 			mMode = "Trainnig";
 			return mMode;
-		}
-		else
+		} else
 			mMode = "Game";
 		return mMode;
 	}
+
 	private String getCurrentLevel(ToggleButton tbGame) {
-		if (tbGame.equals(btLevelGame1)){
+		if (tbGame.equals(btLevelGame1)) {
 			mLevel = "Beginner"; // level 1
 			return mLevel;
-		}
-		else if (tbGame.equals(btLevelGame2)){
+		} else if (tbGame.equals(btLevelGame2)) {
 			mLevel = "Normal"; // level 2
 			return mLevel;
-		}
-		else{
+		} else {
 			mLevel = "Hard"; // level 3
-			}
+		}
 		return mLevel;
 	}
 
@@ -355,7 +353,7 @@ public class Main extends Application {
 		launch(args);
 	}
 
-	public void updateScore(int score){
+	public void updateScore(int score) {
 		try {
 			toServer2.flush();
 			toServer2.writeInt(GET_SCORE);
@@ -367,7 +365,7 @@ public class Main extends Application {
 	}
 
 	public class Game {
-		
+
 		final static int MAX_BALLOON_RADIUS = 60;
 		final static int MIN_BALLOON_RADIUS = 17;
 		int BALLOON_RADIUS = 25;
@@ -376,7 +374,7 @@ public class Main extends Application {
 		final static int PANEL_WIDTH = 200;
 		final static int PANEL_HEIGHT = 100;
 		final static int CHANGE_ANGLE = 5;
-		final  Color[] arrayOfColors = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.INDIGO,
+		final Color[] arrayOfColors = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.INDIGO,
 				Color.PURPLE, Color.CHOCOLATE, Color.GRAY };
 		int angle = 90;
 		final static float DELAY = (float) 0.5;
@@ -402,7 +400,8 @@ public class Main extends Application {
 			}
 
 			public void refresh() {
-				this.setCenterX((int) (this.length * 0.1 * Math.cos(Math.toRadians(this.angle)) + (pane.getWidth() / 2)));
+				this.setCenterX(
+						(int) (this.length * 0.1 * Math.cos(Math.toRadians(this.angle)) + (pane.getWidth() / 2)));
 				this.setCenterY((int) (pane.getHeight() - this.length * 0.1 * Math.sin(Math.toRadians(this.angle))));
 			}
 
@@ -411,14 +410,14 @@ public class Main extends Application {
 			}
 		}
 
-		public  Game(){
+		public Game() {
 			primaryStage.hide();
 			stage = new Stage();
 			stage.setTitle("Shooting Game V1.0");
 			Scene scene = new Scene(pane, 500, 500, Color.ALICEBLUE);
 			Text txTimer = new Text();
-			txTimer.setX(0);
-			txTimer.setY(0);
+			txTimer.setX(20);
+			txTimer.setY(20);
 			txTimer.setStyle("-fx-font: 18 arial;");
 			Text text = new Text();
 			text.setX(5);
@@ -429,7 +428,7 @@ public class Main extends Application {
 			btQuitFromGame.setLayoutX(5);
 			btQuitFromGame.setLayoutY(450);
 			Timeline timer;
-			timer = new Timeline(new KeyFrame(new Duration(5000),ae -> quitGame()));
+			timer = new Timeline(new KeyFrame(new Duration(10000*60*2), ae -> quitGame()));
 			timer.play();
 			txTimer.setText(timer.toString());
 			pane.getChildren().add(0, getNewBalloon());
@@ -442,7 +441,7 @@ public class Main extends Application {
 			gun.setStrokeWidth(16);
 			gun.setStroke(Color.BROWN);
 			game();
-			
+
 			btQuitFromGame.setOnAction(e -> {
 				// TODO store score
 				stage.close();
@@ -475,7 +474,7 @@ public class Main extends Application {
 			EventHandler<ActionEvent> eventHandler = e -> {
 				game();
 				setANDrequestFocus();
-				txTimer.setText(timer.toString());
+				txTimer.setText( "Time left: "+Integer.toString(120 - (int)timer.getCurrentTime().toSeconds()));
 			};
 			Timeline animation = new Timeline(new KeyFrame(Duration.millis(DELAY), eventHandler));
 			animation.setCycleCount(Timeline.INDEFINITE);
@@ -486,13 +485,13 @@ public class Main extends Application {
 			animation.play();
 			stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 				public void handle(WindowEvent event) {
-					//TODO
+					// TODO
 				}
 			});
-			
+
 		}
-	
-		public void quitGame(){
+
+		public void quitGame() {
 			stage.close();
 			primaryStage.show();
 			try {
@@ -503,9 +502,10 @@ public class Main extends Application {
 				e1.printStackTrace();
 			}
 		}
+
 		private void game() {
-			((Text) (pane.getChildren().get(1))).setText("User name: "+mUserName+"\nMode: "+mMode+
-					"\nLevel: "+mLevel+"\n");
+			((Text) (pane.getChildren().get(1)))
+					.setText("User name: " + mUserName + "\nMode: " + mMode + "\nLevel: " + mLevel + "\n");
 			((Circle) (pane.getChildren().get(0))).setRadius(BALLOON_RADIUS);
 			int x = (int) (GUN_LENGTH * Math.cos(Math.toRadians(angle)) + (pane.getWidth() / 2));
 			int y = (int) (pane.getHeight() - GUN_LENGTH * Math.sin(Math.toRadians(angle)));
@@ -529,7 +529,7 @@ public class Main extends Application {
 			}
 		}
 
-		public  int getRand(int a, int b) {
+		public int getRand(int a, int b) {
 			return (int) (Math.random() * ((b - a) + 1) + a);
 		}
 
@@ -562,6 +562,4 @@ public class Main extends Application {
 
 	}
 
-	
-			
 }

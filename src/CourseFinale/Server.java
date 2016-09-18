@@ -168,6 +168,7 @@ public class Server extends Application {
 		private int currentScore;
 		private String currentLevel;
 		private String currentMode;
+		private Date currentime;
 		private String userName;
 		private DataInputStream inputFromClient;
 		private DataOutputStream outputToClient;
@@ -262,9 +263,6 @@ public class Server extends Application {
 							break;
 						case START_GAME:
 							StartGame();
-							Platform.runLater(() -> {
-								taLog.appendText("client(" + clientNo + ") started new game\n");
-							});
 							break;
 						case QUIT_FROM_GAME:
 							// TODO stop time
@@ -300,6 +298,11 @@ public class Server extends Application {
 				outputToClient.writeInt(GET_LEVEL_AND_MODE);
 				outputToClient.flush();
 				outputToClient.writeInt(START_GAME);
+				currentime = new Date();
+				Platform.runLater(() -> {
+					taLog.appendText("client(" + clientNo + ") started new game at "
+							+ currentime.toString()+"\n");
+				});
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
