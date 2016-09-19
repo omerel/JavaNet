@@ -198,13 +198,13 @@ public class Server extends Application {
 						// Send client boolean answer
 						outputToClient.writeBoolean(true);
 						Platform.runLater(() -> {
-							taLog.appendText("Client(" + this.clientNo + "): the name is available ...signing in\n");
+							taLog.appendText("Client(" + this.clientNo + "): the name "+userName+" is available ...signing in\n");
 						});
 						break;
 					} else {
 						Platform.runLater(() -> {
 							taLog.appendText(
-									"Client(" + this.clientNo + "):  the name is occupied. need to change the name\n");
+									"Client(" + this.clientNo + "):  the name  is occupied. need to change the name\n");
 						});
 						// Send client number to the client
 						outputToClient.writeBoolean(false);

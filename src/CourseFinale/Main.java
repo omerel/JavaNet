@@ -7,6 +7,10 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+import javax.media.j3d.Appearance;
+import javax.media.j3d.ColoringAttributes;
+import javax.vecmath.Color3f;
+
 import CourseFinale.Server.HandleAClient;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -28,14 +32,22 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BackgroundImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Sphere;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -52,7 +64,10 @@ public class Main extends Application {
 	private static final int GET_LEVEL_AND_MODE = 5;
 	private static final int QUIT_FROM_GAME = 6;
 	private static final int TIMER = 7;
-
+	private static final String HARD = "Hard";
+	private static final String BEGINNER = "Beginner";
+	private static final String NORMAL = "Normal";
+	
 	private int request;
 
 	private Socket socket;
@@ -286,8 +301,6 @@ public class Main extends Application {
 							game = new Game();
 						});
 						break;
-					case GET_SCORE:
-						break;
 					case CHANGE_NAME:
 						break;
 					case CLOSE_USER:
@@ -338,13 +351,13 @@ public class Main extends Application {
 
 	private String getCurrentLevel(ToggleButton tbGame) {
 		if (tbGame.equals(btLevelGame1)) {
-			mLevel = "Beginner"; // level 1
+			mLevel = BEGINNER; // level 1
 			return mLevel;
 		} else if (tbGame.equals(btLevelGame2)) {
-			mLevel = "Normal"; // level 2
+			mLevel = NORMAL; // level 2
 			return mLevel;
 		} else {
-			mLevel = "Hard"; // level 3
+			mLevel = HARD; // level 3
 		}
 		return mLevel;
 	}
@@ -366,25 +379,23 @@ public class Main extends Application {
 
 	public class Game {
 
-		final static int MAX_BALLOON_RADIUS = 60;
-		final static int MIN_BALLOON_RADIUS = 17;
-		int BALLOON_RADIUS = 25;
 		final static int BALL_RADIUS = 5;
 		final static int GUN_LENGTH = 30;
 		final static int PANEL_WIDTH = 200;
 		final static int PANEL_HEIGHT = 100;
-		final static int CHANGE_ANGLE = 5;
+		final static int CHANGE_ANGLE = 3;
 		final Color[] arrayOfColors = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.INDIGO,
 				Color.PURPLE, Color.CHOCOLATE, Color.GRAY };
+		
+		private int balloonRadious = 50;
 		int angle = 90;
 		final static float DELAY = (float) 0.5;
 		Pane pane = new Pane();
-		Line gun;
+		Cylinder gun;
 		int score = 0;
-		int myClientNumber = 0;
 		Stage stage;
 
-		class SmallBall extends Circle {
+		class SmallBall extends Sphere {
 			private int length;
 			private int angle;
 
@@ -400,13 +411,13 @@ public class Main extends Application {
 			}
 
 			public void refresh() {
-				this.setCenterX(
+				this.setLayoutX(
 						(int) (this.length * 0.1 * Math.cos(Math.toRadians(this.angle)) + (pane.getWidth() / 2)));
-				this.setCenterY((int) (pane.getHeight() - this.length * 0.1 * Math.sin(Math.toRadians(this.angle))));
+				this.setLayoutY((int) (pane.getHeight() - this.length * 0.1 * Math.sin(Math.toRadians(this.angle))));
 			}
 
 			public boolean isOutOfPane() {
-				return (this.getCenterX() > pane.getWidth() || this.getCenterY() < 0 || this.getCenterX() < 0);
+				return (this.getLayoutX() > pane.getWidth() || this.getLayoutY() < 0 || this.getLayoutX() < 0);
 			}
 		}
 
@@ -414,32 +425,45 @@ public class Main extends Application {
 			primaryStage.hide();
 			stage = new Stage();
 			stage.setTitle("Shooting Game V1.0");
-			Scene scene = new Scene(pane, 500, 500, Color.ALICEBLUE);
-			Text txTimer = new Text();
-			txTimer.setX(20);
-			txTimer.setY(20);
-			txTimer.setStyle("-fx-font: 18 arial;");
-			Text text = new Text();
-			text.setX(5);
-			text.setY(400);
-			text.setStyle("-fx-font: 18 arial;");
+			Scene scene = new Scene(pane, 700, 500);
+			Label txTimer = new Label();
+			txTimer.setLayoutX(20);
+			txTimer.setLayoutY(20);
+			txTimer.setStyle("-fx-font: 18 arial;-fx-text-fill: white;");
+			Label text = new Label();
+			text.setLayoutX(5);
+			text.setLayoutY(350);
+			text.setStyle("-fx-font: 18 arial;-fx-text-fill: white;");
 			Button btQuitFromGame = new Button("Quit");
 			btQuitFromGame.setStyle("-fx-font: 18 arial;-fx-base: red;");
 			btQuitFromGame.setLayoutX(5);
 			btQuitFromGame.setLayoutY(450);
 			Timeline timer;
-			timer = new Timeline(new KeyFrame(new Duration(10000*60*2), ae -> quitGame()));
+			timer = new Timeline(new KeyFrame(new Duration(1000*120), ae -> quitGame()));
 			timer.play();
 			txTimer.setText(timer.toString());
-			pane.getChildren().add(0, getNewBalloon());
-			pane.getChildren().add(1, text);
-			pane.getChildren().add(2, btQuitFromGame);
-			pane.getChildren().add(3, txTimer);
-			gun = new Line();
-			gun.startXProperty().bind(pane.widthProperty().divide(2));
-			gun.startYProperty().bind(pane.heightProperty());
-			gun.setStrokeWidth(16);
-			gun.setStroke(Color.BROWN);
+			
+			ImageView imv = new ImageView();
+	        Image image = new Image(Main.class.getResourceAsStream("stars.jpg"));
+	        imv.setImage(image);
+	        imv.setFitWidth(700);
+	        imv.setFitHeight(500);
+	        
+	        pane.getChildren().add(0, imv);
+	        pane.getChildren().add(1, getNewBalloon());
+			pane.getChildren().add(2, text);
+			pane.getChildren().add(3, btQuitFromGame);
+			pane.getChildren().add(4, txTimer);
+	        
+			
+			gun = new Cylinder(20, 100);
+			gun.layoutXProperty().bind(pane.widthProperty().divide(2));
+			gun.layoutYProperty().bind(pane.heightProperty());
+			PhongMaterial material = new PhongMaterial();
+		    material.setDiffuseColor(Color.GOLD);
+		    material.setSpecularColor(Color.GRAY);
+			gun.setMaterial(material);
+			
 			game();
 
 			btQuitFromGame.setOnAction(e -> {
@@ -454,7 +478,7 @@ public class Main extends Application {
 					e1.printStackTrace();
 				}
 			});
-			pane.getChildren().add(gun);
+			pane.getChildren().addAll(gun);
 			setANDrequestFocus();
 			pane.setOnKeyPressed(e -> {
 				if (e.getCode() == KeyCode.LEFT) {
@@ -504,13 +528,11 @@ public class Main extends Application {
 		}
 
 		private void game() {
-			((Text) (pane.getChildren().get(1)))
+			
+			((Label) (pane.getChildren().get(2)))
 					.setText("User name: " + mUserName + "\nMode: " + mMode + "\nLevel: " + mLevel + "\n");
-			((Circle) (pane.getChildren().get(0))).setRadius(BALLOON_RADIUS);
-			int x = (int) (GUN_LENGTH * Math.cos(Math.toRadians(angle)) + (pane.getWidth() / 2));
-			int y = (int) (pane.getHeight() - GUN_LENGTH * Math.sin(Math.toRadians(angle)));
-			gun.setEndX(x);
-			gun.setEndY(y);
+			((Sphere) (pane.getChildren().get(1))).setRadius(balloonRadious);
+			gun.setRotate(90-angle);
 			for (int i = 0; i < pane.getChildren().size(); i++) {
 				if (pane.getChildren().get(i) instanceof SmallBall) {
 					if (!((SmallBall) (pane.getChildren().get(i))).isOutOfPane()) {
@@ -520,7 +542,7 @@ public class Main extends Application {
 						pane.getChildren().remove(i);
 					}
 					try {
-						if (overlaps((Circle) pane.getChildren().get(i), (Circle) pane.getChildren().get(0))) {
+						if (overlaps((Sphere) pane.getChildren().get(i), (Sphere) pane.getChildren().get(1))) {
 							hit(i);
 						}
 					} catch (IndexOutOfBoundsException e) {
@@ -538,23 +560,46 @@ public class Main extends Application {
 			pane.requestFocus();
 		}
 
-		public Circle getNewBalloon() {
-			Circle c = new Circle(getRand(BALLOON_RADIUS, (int) (pane.getWidth() - BALLOON_RADIUS)),
-					getRand(BALLOON_RADIUS, (int) (pane.getHeight() * 0.1)), BALLOON_RADIUS);
-			int colorIndex = (int) ((arrayOfColors.length) * Math.random());
-			c.setFill(arrayOfColors[colorIndex]);
-			return c;
+		public Sphere getNewBalloon() {
+			
+			int colorIndex;
+			PhongMaterial material;
+			Sphere mySphere;
+			
+			switch (mLevel){
+			case BEGINNER:
+				balloonRadious = 50;
+				break;
+			case NORMAL:
+				balloonRadious = 30;
+				break;
+			case HARD:
+				balloonRadious = 10;
+				break;
+				
+			}
+			mySphere = new Sphere(balloonRadious);
+			mySphere.setLayoutX(getRand(balloonRadious, (int) (pane.getWidth() - balloonRadious)));
+			mySphere.setLayoutY(getRand(balloonRadious, (int) (pane.getHeight() * 0.3)));
+			
+			colorIndex = (int) ((arrayOfColors.length) * Math.random());
+			material = new PhongMaterial();
+		    material.setDiffuseColor(arrayOfColors[colorIndex]);
+		    material.setSpecularColor(arrayOfColors[colorIndex]);
+		    
+			mySphere.setMaterial(material);
+			return mySphere;
 		}
 
-		public boolean overlaps(Circle c1, Circle c2) {
-			return Math.sqrt(Math.pow((c1.getCenterX() - c2.getCenterX()), 2)
-					+ Math.pow((c1.getCenterY() - c2.getCenterY()), 2)) <= (c1.getRadius() + c2.getRadius());
+		public boolean overlaps(Sphere s1, Sphere s2) {
+			return Math.sqrt(Math.pow((s1.getLayoutX() - s2.getLayoutX()), 2)
+					+ Math.pow((s1.getLayoutY()- s2.getLayoutY()), 2)) <= (s1.getRadius() + s2.getRadius());
 		}
 
 		public void hit(int i) {
 			pane.getChildren().remove(i);
-			pane.getChildren().remove(0);
-			pane.getChildren().add(0, getNewBalloon());
+			pane.getChildren().remove(1);
+			pane.getChildren().add(1, getNewBalloon());
 			setANDrequestFocus();
 			this.score++;
 			updateScore(score);
