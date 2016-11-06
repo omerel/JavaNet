@@ -384,7 +384,7 @@ public class Server extends Application {
 	        ("jdbc:mysql://localhost/gun", "scott", "tiger");
 	      System.out.println("Database connected");
 	      
-	      populatePlayersList();
+	      populatePlayersList(cbUserList);
 	      populateQueriesList();
 	    }
 	    catch (Exception ex)
@@ -399,7 +399,7 @@ public class Server extends Application {
 			rs = statement.executeQuery(
 						"SELECT name"
 					+ " FROM Players"
-					+ " WHERE name = " + name);
+					+ " WHERE name = '" + name + "'");
 
 			return (rs != null && rs.first());
 		} catch (SQLException e) {
@@ -408,7 +408,7 @@ public class Server extends Application {
 		}
 	}
 	
-	private void populatePlayersList() {
+	private void populatePlayersList(ComboBox<KeyValPair> cbUserList) {
 		// Add empty cell for all players
 		cbUserList.getItems().add(new KeyValPair(ALL_PLAYERS, "ALL"));
 	      try {
@@ -420,7 +420,7 @@ public class Server extends Application {
 				  KeyValPair player = new KeyValPair(rsPlayers.getInt("id"), rsPlayers.getString("name"));
 				  cbUserList.getItems().add(player);
 			  }
-			  cbUserList.getSelectionModel().selectFirst();
+			  //cbUserList.getSelectionModel().selectFirst();
 	      } catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -537,7 +537,7 @@ public class Server extends Application {
 			  statement = connection.createStatement();
 			  
 			  statement.execute("INSERT INTO Events"
-			  		+ "			VALUES("+ game + ", " + type + ",  NOW())");
+			  		+ "			VALUES("+ game + ", '" + type + "',  NOW())");
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -548,12 +548,12 @@ public class Server extends Application {
 		  int id = 0;
 		  try {
 			  statement = connection.createStatement();
-			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) max_id FROM Games) + 1");
+			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Games)");
 			  if (rsId.first())
 				  id = rsId.getInt("max_id") + 1;
 			  
 			  statement.execute("INSERT INTO Games"
-			  		+ "			VALUES(" + id + ", " + player + ", " + level + ", "+ mode + ", NOW(), "+ score);
+			  		+ "			VALUES(" + id + ", " + player + ", '" + level + "', '"+ mode + "', NOW(), "+ score);
 			  
 			  addEvent(id, "START GAME");
 			  return id;
@@ -568,12 +568,12 @@ public class Server extends Application {
 		  int id = 0;
 		  try {
 			  statement = connection.createStatement();
-			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) max_id FROM Players)");
+			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Players)");
 			  if (rsId.first())
 				  id = rsId.getInt("max_id") + 1;
 			  
 			  statement.execute("INSERT INTO Players"
-			  		+ "			VALUES(" + id + ", " + name);
+			  		+ "			VALUES(" + id + ", '" + name + "'");
 			  
 			  cbUserList.getItems().add(new KeyValPair(id,  name));
 			  return id;
@@ -587,7 +587,7 @@ public class Server extends Application {
 		  try {
 			  statement = connection.createStatement();
 			  statement.executeUpdate("UPDATE Players"
-			  		+ "					SET name = " + name
+			  		+ "					SET name = '" + name + "'"
 			  		+ "					WHERE id = " + id);
 		} catch (SQLException e) {
 			e.printStackTrace();
