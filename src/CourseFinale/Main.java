@@ -342,7 +342,7 @@ public class Main extends Application {
 
 	private String getCurrentMode() {
 		if (rbTrainig.isSelected()) {
-			mMode = "Trainnig";
+			mMode = "Training";
 			return mMode;
 		} else
 			mMode = "Game";
