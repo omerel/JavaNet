@@ -548,12 +548,12 @@ public class Server extends Application {
 		  int id = 0;
 		  try {
 			  statement = connection.createStatement();
-			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Games)");
+			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Games");
 			  if (rsId.first())
 				  id = rsId.getInt("max_id") + 1;
 			  
 			  statement.execute("INSERT INTO Games"
-			  		+ "			VALUES(" + id + ", " + player + ", '" + level + "', '"+ mode + "', NOW(), "+ score);
+			  		+ "			VALUES(" + id + ", " + player + ", " + level + ", '"+ mode + "', NOW(), "+ score + ")");
 			  
 			  addEvent(id, "START GAME");
 			  return id;
@@ -568,12 +568,12 @@ public class Server extends Application {
 		  int id = 0;
 		  try {
 			  statement = connection.createStatement();
-			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Players)");
+			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Players");
 			  if (rsId.first())
 				  id = rsId.getInt("max_id") + 1;
 			  
 			  statement.execute("INSERT INTO Players"
-			  		+ "			VALUES(" + id + ", '" + name + "'");
+			  		+ "			VALUES(" + id + ", '" + name + "')");
 			  
 			  cbUserList.getItems().add(new KeyValPair(id,  name));
 			  return id;

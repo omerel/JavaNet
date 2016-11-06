@@ -20,7 +20,7 @@ CREATE TABLE Games(id numeric not null, player numeric, level numeric, mode varc
 
 -- Game Events
 DROP TABLE IF EXISTS Events;
-CREATE TABLE Events(game numeric, eventType varchar(25), eventTime timestamp, constraint pkEvent primary key (game, eventType, eventTime), constraint fkGame foreign key (game) references Games(id));
+CREATE TABLE Events(id numeric not null, game numeric, eventType varchar(25), eventTime timestamp, constraint pkEvent primary key (id), constraint fkGame foreign key (game) references Games(id));
 
 -- Insert data
 COMMIT;
