@@ -314,8 +314,8 @@ public class Server extends Application {
 							// save final result
 							Platform.runLater(() -> {
 								// Update score in DB
-								updateScore(currentGame, currentScore);
 								addEvent(currentGame, "GAME FINISHED");
+								updateScore(currentGame, currentScore);
 								taLog.appendText("client(" + clientNo + ") finished the game "
 										+ "final score is:" + currentScore + "\n");
 							});
@@ -400,6 +400,10 @@ public class Server extends Application {
 						"SELECT name"
 					+ " FROM Players"
 					+ " WHERE name = '" + name + "'");
+			
+			System.out.println("SELECT name"
+					+ " FROM Players"
+					+ " WHERE name = '" + name + "'");
 
 			return (rs != null && rs.first());
 		} catch (SQLException e) {
@@ -415,6 +419,7 @@ public class Server extends Application {
 	    	  statement = connection.createStatement();
 		
 			  ResultSet rsPlayers = statement.executeQuery("SELECT id, name FROM Players");
+			  System.out.println("SELECT id, name FROM Players");
 			  while (rsPlayers.next())
 			  { 
 				  KeyValPair player = new KeyValPair(rsPlayers.getInt("id"), rsPlayers.getString("name"));
@@ -443,6 +448,11 @@ public class Server extends Application {
 					  		+ " FROM Games AS g, Events AS e, EventTypes AS et"
 					  		+ " WHERE e.game = g.id AND e.eventType = et.id"
 					  		+ " ORDER BY g.player, g.startTime, g.score, e.eventTime";
+					  
+					  System.out.println("SELECT g.id Game, g.Level Level, g.startTime 'Start Time', et.eventType Event, e.eventTime 'Event Time', g.score Score"
+					  		+ " FROM Games AS g, Events AS e, EventTypes AS et"
+					  		+ " WHERE e.game = g.id AND e.eventType = et.id"
+					  		+ " ORDER BY g.player, g.startTime, g.score, e.eventTime");
 					  //statement.setInt(1, cbUserList.getSelectionModel().getSelectedItem().getKey());
 					  break;
 				  }
@@ -451,6 +461,10 @@ public class Server extends Application {
 						  		+ " FROM Games AS g, Events AS e, EventTypes AS et"
 						  		+ " WHERE e.game = g.id AND e.eventType = et.id"
 						  		+ " ORDER BY g.player, g.score DESC, g.startTime, e.eventTime";
+					  System.out.println("SELECT g.id Game, g.Level Level, g.startTime 'Start Time', et.eventType Event, e.eventTime 'Event Time', g.score Score"
+						  		+ " FROM Games AS g, Events AS e, EventTypes AS et"
+						  		+ " WHERE e.game = g.id AND e.eventType = et.id"
+						  		+ " ORDER BY g.player, g.score DESC, g.startTime, e.eventTime");
 					  break;
 				  }
 				  case ALL_GAMES: {
@@ -459,6 +473,11 @@ public class Server extends Application {
 						  		+ " WHERE p.id = g.player"
 						  		+ " ORDER BY g.score DESC"
 						  		+ " GROUP BY p.name";
+					  System.out.println("SELECT p.name Player, g.id Game, g.level Level, g.startTime 'Start Time', g.score Score"
+						  		+ " FROM Player As p, Games AS g, Events AS e, EventTypes AS et"
+						  		+ " WHERE p.id = g.player"
+						  		+ " ORDER BY g.score DESC"
+						  		+ " GROUP BY p.name");
 					  break;
 				  }
 				  case RANKS: {
@@ -473,6 +492,16 @@ public class Server extends Application {
 								  	+ " AND COUNT(SELECT id FROM Games WHERE id = p.id) > 3";
 						  		//+ " ORDER BY g.score DESC"
 						  		//+ " GROUP BY p.name";
+					  
+					  System.out.println("SELECT p.name Player,"
+							  		+ " AVG(SELECT score"
+							  		+ "		FROM Games"
+							  		+ "		WHERE p.id = player"
+							  		+ "		ORDER BY score DESC"
+							  		+ "		LIMIT 3) Rank"
+								  	+ " FROM Player As p, Games AS g"
+								  	+ " WHERE p.id = g.player"
+								  	+ " AND COUNT(SELECT id FROM Games WHERE id = p.id) > 3");
 					  break;
 				  }
 				  default:
@@ -533,11 +562,20 @@ public class Server extends Application {
 	  }
 	  
 	  private void addEvent(int game, String type) {
+		  int id = 0;
 		  try {
 			  statement = connection.createStatement();
 			  
+			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Events");
+			  System.out.println("SELECT MAX(id) AS max_id FROM Events");
+			  if (rsId.first())
+				  id = rsId.getInt("max_id") + 1;
+			  
 			  statement.execute("INSERT INTO Events"
-			  		+ "			VALUES("+ game + ", '" + type + "',  NOW())");
+			  		+ "			VALUES("+ id + "," + game + ", '" + type + "',  NOW())");
+			  
+			  System.out.println("INSERT INTO Events"
+				  		+ "			VALUES("+ id + "," + game + ", '" + type + "',  NOW())");
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -549,11 +587,14 @@ public class Server extends Application {
 		  try {
 			  statement = connection.createStatement();
 			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Games");
+			  System.out.println("SELECT MAX(id) AS max_id FROM Games");
 			  if (rsId.first())
 				  id = rsId.getInt("max_id") + 1;
 			  
 			  statement.execute("INSERT INTO Games"
-			  		+ "			VALUES(" + id + ", " + player + ", " + level + ", '"+ mode + "', NOW(), "+ score + ")");
+			  		+ "			VALUES(" + id + ", " + player + ", '" + level + "', '"+ mode + "', NOW(), "+ score + ")");
+			  System.out.println("INSERT INTO Games"
+			  		+ "			VALUES(" + id + ", " + player + ", '" + level + "', '"+ mode + "', NOW(), "+ score + ")");
 			  
 			  addEvent(id, "START GAME");
 			  return id;
@@ -569,10 +610,13 @@ public class Server extends Application {
 		  try {
 			  statement = connection.createStatement();
 			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Players");
+			  System.out.println("SELECT MAX(id) AS max_id FROM Players");
 			  if (rsId.first())
 				  id = rsId.getInt("max_id") + 1;
 			  
 			  statement.execute("INSERT INTO Players"
+			  		+ "			VALUES(" + id + ", '" + name + "')");
+			  System.out.println("INSERT INTO Players"
 			  		+ "			VALUES(" + id + ", '" + name + "')");
 			  
 			  cbUserList.getItems().add(new KeyValPair(id,  name));
@@ -589,6 +633,9 @@ public class Server extends Application {
 			  statement.executeUpdate("UPDATE Players"
 			  		+ "					SET name = '" + name + "'"
 			  		+ "					WHERE id = " + id);
+			  System.out.println("UPDATE Players"
+			  		+ "					SET name = '" + name + "'"
+			  		+ "					WHERE id = " + id);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}		  
@@ -598,6 +645,9 @@ public class Server extends Application {
 		  try {
 			  statement = connection.createStatement();
 			  statement.executeUpdate("UPDATE Games"
+			  		+ "					SET score = " + score
+			  		+ "					WHERE id = " + gameId);
+			  System.out.println("UPDATE Games"
 			  		+ "					SET score = " + score
 			  		+ "					WHERE id = " + gameId);
 		} catch (SQLException e) {

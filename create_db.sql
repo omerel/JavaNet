@@ -16,7 +16,7 @@ CREATE TABLE Players(id numeric not null, name varchar(25) unique, constraint pk
 
 -- Games
 DROP TABLE IF EXISTS Games;
-CREATE TABLE Games(id numeric not null, player numeric, level numeric, mode varchar(10), startTime timestamp, score numeric, constraint pkGame primary key (id), constraint fkPlayer foreign key (player) references Players(id));
+CREATE TABLE Games(id numeric not null, player numeric, level varchar(10), mode varchar(10), startTime timestamp, score numeric, constraint pkGame primary key (id), constraint fkPlayer foreign key (player) references Players(id));
 
 -- Game Events
 DROP TABLE IF EXISTS Events;

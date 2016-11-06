@@ -113,11 +113,11 @@ public class Main extends Application {
 		rbGame.setToggleGroup(tgGameMode);
 		Label lblLevel = new Label("Choose Level:");
 		tgGameLevel = new ToggleGroup();
-		btLevelGame1 = new ToggleButton("Beginer");
+		btLevelGame1 = new ToggleButton(BEGINNER);
 		btLevelGame1.setToggleGroup(tgGameLevel);
-		btLevelGame2 = new ToggleButton("Noraml");
+		btLevelGame2 = new ToggleButton(NORMAL);
 		btLevelGame2.setToggleGroup(tgGameLevel);
-		btLevelGame3 = new ToggleButton("Expert");
+		btLevelGame3 = new ToggleButton(HARD);
 		btLevelGame3.setToggleGroup(tgGameLevel);
 
 		btStartGame = new Button("Start");
