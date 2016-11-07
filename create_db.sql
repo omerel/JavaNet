@@ -8,19 +8,73 @@ DROP USER IF EXISTS	'scott'@'localhost'
 CREATE USER 'scott'@'localhost' IDENTIFIED BY 'tiger';
 GRANT ALL ON *.* TO 'scott'@'localhost';
 
+--
+-- Table structure for table `players`
+--
 
--- Create Tables
--- Players
-DROP TABLE IF EXISTS Players;
-CREATE TABLE Players(id numeric not null, name varchar(25) unique, constraint pkPlayer primary key (id));
+DROP TABLE IF EXISTS `players`;
+CREATE TABLE `players` (
+  `id` decimal(10,0) NOT NULL,
+  `name` varchar(25) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+)
 
--- Games
-DROP TABLE IF EXISTS Games;
-CREATE TABLE Games(id numeric not null, player numeric, level varchar(10), mode varchar(10), startTime timestamp, score numeric, constraint pkGame primary key (id), constraint fkPlayer foreign key (player) references Players(id));
+--
+-- Dumping data for table `players`
+--
 
--- Game Events
-DROP TABLE IF EXISTS Events;
-CREATE TABLE Events(id numeric not null, game numeric, eventType varchar(25), eventTime timestamp, constraint pkEvent primary key (id), constraint fkGame foreign key (game) references Games(id));
+LOCK TABLES `players` WRITE;
+INSERT INTO `players` VALUES (1,'player1'),(2,'player2');
+UNLOCK TABLES;
 
--- Insert data
+--
+-- Table structure for table `games`
+--
+
+DROP TABLE IF EXISTS `games`;
+
+CREATE TABLE `games` (
+  `id` decimal(10,0) NOT NULL,
+  `player` decimal(10,0) DEFAULT NULL,
+  `level` varchar(10) DEFAULT NULL,
+  `mode` varchar(10) DEFAULT NULL,
+  `startTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `score` decimal(10,0) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fkPlayer` (`player`),
+  CONSTRAINT `fkPlayer` FOREIGN KEY (`player`) REFERENCES `players` (`id`)
+)
+
+--
+-- Dumping data for table `games`
+--
+
+LOCK TABLES `games` WRITE;
+INSERT INTO `games` VALUES (1,1,'Beginner','Game','2016-11-06 17:25:48',32),(2,1,'Beginner','Game','2016-11-06 17:27:52',40),(3,1,'Beginner','Game','2016-11-06 17:36:35',14),(4,1,'Normal','Game','2016-11-06 22:28:17',22),(5,1,'Hard','Game','2016-11-06 22:32:30',26),(6,2,'Beginner','Training','2016-11-07 05:51:22',29);
+UNLOCK TABLES;
+
+-- Table structure for table `events`
+--
+DROP TABLE IF EXISTS `events`;
+
+CREATE TABLE `events` (
+  `id` decimal(10,0) NOT NULL,
+  `game` decimal(10,0) DEFAULT NULL,
+  `eventType` varchar(25) DEFAULT NULL,
+  `eventTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `message` varchar(25) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fkGame` (`game`),
+  CONSTRAINT `fkGame` FOREIGN KEY (`game`) REFERENCES `games` (`id`)
+)
+
+--
+-- Dumping data for table `events`
+--
+
+LOCK TABLES `events` WRITE;
+INSERT INTO `events` VALUES (1,1,'START GAME','2016-11-06 17:23:48','Game started'),(2,1,'NEW HIT','2016-11-06 17:23:52','Current score is 1'),(3,1,'NEW HIT','2016-11-06 17:23:55','Current score is 2'),(4,1,'NEW HIT','2016-11-06 17:23:55','Current score is 3'),(5,1,'NEW HIT','2016-11-06 17:24:00','Current score is 4'),(6,1,'NEW HIT','2016-11-06 17:24:04','Current score is 5'),(7,1,'NEW HIT','2016-11-06 17:24:09','Current score is 6'),(8,1,'NEW HIT','2016-11-06 17:24:14','Current score is 7'),(9,1,'NEW HIT','2016-11-06 17:24:15','Current score is 8'),(10,1,'NEW HIT','2016-11-06 17:24:15','Current score is 9'),(11,1,'NEW HIT','2016-11-06 17:24:20','Current score is 10'),(12,1,'NEW HIT','2016-11-06 17:24:23','Current score is 11'),(13,1,'NEW HIT','2016-11-06 17:24:28','Current score is 12'),(14,1,'NEW HIT','2016-11-06 17:24:32','Current score is 13'),(15,1,'NEW HIT','2016-11-06 17:24:37','Current score is 14'),(16,1,'NEW HIT','2016-11-06 17:24:40','Current score is 15'),(17,1,'NEW HIT','2016-11-06 17:24:44','Current score is 16'),(18,1,'NEW HIT','2016-11-06 17:24:52','Current score is 17'),(19,1,'NEW HIT','2016-11-06 17:24:56','Current score is 18'),(20,1,'NEW HIT','2016-11-06 17:24:57','Current score is 19'),(21,1,'NEW HIT','2016-11-06 17:24:57','Current score is 20'),(22,1,'NEW HIT','2016-11-06 17:25:01','Current score is 21'),(23,1,'NEW HIT','2016-11-06 17:25:01','Current score is 22'),(24,1,'NEW HIT','2016-11-06 17:25:05','Current score is 23'),(25,1,'NEW HIT','2016-11-06 17:25:08','Current score is 24'),(26,1,'NEW HIT','2016-11-06 17:25:12','Current score is 25'),(27,1,'NEW HIT','2016-11-06 17:25:12','Current score is 26'),(28,1,'NEW HIT','2016-11-06 17:25:16','Current score is 27'),(29,1,'NEW HIT','2016-11-06 17:25:24','Current score is 28'),(30,1,'NEW HIT','2016-11-06 17:25:28','Current score is 29'),(31,1,'NEW HIT','2016-11-06 17:25:33','Current score is 30'),(32,1,'NEW HIT','2016-11-06 17:25:38','Current score is 31'),(33,1,'NEW HIT','2016-11-06 17:25:43','Current score is 32'),(34,1,'GAME FINISHED','2016-11-06 17:25:48','Final score is 32'),(35,1,'NEW HIT','2016-11-06 17:25:48','Current score is 33'),(36,2,'START GAME','2016-11-06 17:25:52','Game started'),(37,2,'NEW HIT','2016-11-06 17:25:56','Current score is 1'),(38,2,'NEW HIT','2016-11-06 17:25:58','Current score is 2'),(39,2,'NEW HIT','2016-11-06 17:26:01','Current score is 3'),(40,2,'NEW HIT','2016-11-06 17:26:02','Current score is 4'),(41,2,'NEW HIT','2016-11-06 17:26:02','Current score is 5'),(42,2,'NEW HIT','2016-11-06 17:26:07','Current score is 6'),(43,2,'NEW HIT','2016-11-06 17:26:09','Current score is 7'),(44,2,'NEW HIT','2016-11-06 17:26:13','Current score is 9'),(45,2,'NEW HIT','2016-11-06 17:26:13','Current score is 9'),(46,2,'NEW HIT','2016-11-06 17:26:17','Current score is 10'),(47,2,'NEW HIT','2016-11-06 17:26:17','Current score is 11'),(48,2,'NEW HIT','2016-11-06 17:26:20','Current score is 12'),(49,2,'NEW HIT','2016-11-06 17:26:24','Current score is 14'),(50,2,'NEW HIT','2016-11-06 17:26:24','Current score is 14'),(51,2,'NEW HIT','2016-11-06 17:26:33','Current score is 15'),(52,2,'NEW HIT','2016-11-06 17:26:36','Current score is 16'),(53,2,'NEW HIT','2016-11-06 17:26:36','Current score is 17'),(54,2,'NEW HIT','2016-11-06 17:26:41','Current score is 19'),(55,2,'NEW HIT','2016-11-06 17:26:41','Current score is 19'),(56,2,'NEW HIT','2016-11-06 17:26:44','Current score is 20'),(57,2,'NEW HIT','2016-11-06 17:26:48','Current score is 21'),(58,2,'NEW HIT','2016-11-06 17:26:55','Current score is 22'),(59,2,'NEW HIT','2016-11-06 17:27:01','Current score is 23'),(60,2,'NEW HIT','2016-11-06 17:27:05','Current score is 24'),(61,2,'NEW HIT','2016-11-06 17:27:07','Current score is 25'),(62,2,'NEW HIT','2016-11-06 17:27:10','Current score is 26'),(63,2,'NEW HIT','2016-11-06 17:27:17','Current score is 27'),(64,2,'NEW HIT','2016-11-06 17:27:23','Current score is 28'),(65,2,'NEW HIT','2016-11-06 17:27:27','Current score is 29'),(66,2,'NEW HIT','2016-11-06 17:27:31','Current score is 30'),(67,2,'NEW HIT','2016-11-06 17:27:31','Current score is 31'),(68,2,'NEW HIT','2016-11-06 17:27:34','Current score is 32'),(69,2,'NEW HIT','2016-11-06 17:27:35','Current score is 33'),(70,2,'NEW HIT','2016-11-06 17:27:38','Current score is 34'),(71,2,'NEW HIT','2016-11-06 17:27:42','Current score is 35'),(72,2,'NEW HIT','2016-11-06 17:27:43','Current score is 36'),(73,2,'NEW HIT','2016-11-06 17:27:45','Current score is 37'),(74,2,'NEW HIT','2016-11-06 17:27:48','Current score is 38'),(75,2,'NEW HIT','2016-11-06 17:27:49','Current score is 39'),(76,2,'NEW HIT','2016-11-06 17:27:49','Current score is 40'),(77,2,'GAME FINISHED','2016-11-06 17:27:52','Final score is 40'),(78,3,'START GAME','2016-11-06 17:34:35','Game started'),(79,3,'NEW HIT','2016-11-06 17:34:38','Current score is 1'),(80,3,'NEW HIT','2016-11-06 17:34:42','Current score is 2'),(81,3,'NEW HIT','2016-11-06 17:34:45','Current score is 3'),(82,3,'NEW HIT','2016-11-06 17:34:46','Current score is 4'),(83,3,'NEW HIT','2016-11-06 17:34:49','Current score is 5'),(84,3,'NEW HIT','2016-11-06 17:34:50','Current score is 7'),(85,3,'NEW HIT','2016-11-06 17:34:51','Current score is 7'),(86,3,'NEW HIT','2016-11-06 17:34:51','Current score is 8'),(87,3,'NEW HIT','2016-11-06 17:34:55','Current score is 9'),(88,3,'NEW HIT','2016-11-06 17:34:59','Current score is 10'),(89,3,'NEW HIT','2016-11-06 17:35:02','Current score is 11'),(90,3,'NEW HIT','2016-11-06 17:35:02','Current score is 12'),(91,3,'NEW HIT','2016-11-06 17:35:03','Current score is 13'),(92,3,'NEW HIT','2016-11-06 17:35:06','Current score is 14'),(93,3,'GAME FINISHED','2016-11-06 17:36:35','Final score is 14'),(94,4,'START GAME','2016-11-06 22:26:16','Game started'),(95,4,'NEW HIT','2016-11-06 22:26:24','Current score is 1'),(96,4,'NEW HIT','2016-11-06 22:26:28','Current score is 2'),(97,4,'NEW HIT','2016-11-06 22:26:34','Current score is 3'),(98,4,'NEW HIT','2016-11-06 22:26:41','Current score is 4'),(99,4,'NEW HIT','2016-11-06 22:26:47','Current score is 5'),(100,4,'NEW HIT','2016-11-06 22:26:51','Current score is 6'),(101,4,'NEW HIT','2016-11-06 22:26:52','Current score is 7'),(102,4,'NEW HIT','2016-11-06 22:26:57','Current score is 8'),(103,4,'NEW HIT','2016-11-06 22:27:01','Current score is 9'),(104,4,'NEW HIT','2016-11-06 22:27:05','Current score is 10'),(105,4,'NEW HIT','2016-11-06 22:27:08','Current score is 11'),(106,4,'NEW HIT','2016-11-06 22:27:11','Current score is 12'),(107,4,'NEW HIT','2016-11-06 22:27:16','Current score is 13'),(108,4,'NEW HIT','2016-11-06 22:27:20','Current score is 14'),(109,4,'NEW HIT','2016-11-06 22:27:24','Current score is 15'),(110,4,'NEW HIT','2016-11-06 22:27:26','Current score is 16'),(111,4,'NEW HIT','2016-11-06 22:27:35','Current score is 17'),(112,4,'NEW HIT','2016-11-06 22:27:37','Current score is 18'),(113,4,'NEW HIT','2016-11-06 22:27:40','Current score is 19'),(114,4,'NEW HIT','2016-11-06 22:27:49','Current score is 20'),(115,4,'NEW HIT','2016-11-06 22:28:06','Current score is 21'),(116,4,'NEW HIT','2016-11-06 22:28:16','Current score is 22'),(117,4,'GAME FINISHED','2016-11-06 22:28:17','Final score is 22'),(118,5,'START GAME','2016-11-06 22:30:30','Game started'),(119,5,'NEW HIT','2016-11-06 22:30:33','Current score is 1'),(120,5,'NEW HIT','2016-11-06 22:30:39','Current score is 2'),(121,5,'NEW HIT','2016-11-06 22:30:39','Current score is 3'),(122,5,'NEW HIT','2016-11-06 22:30:41','Current score is 4'),(123,5,'NEW HIT','2016-11-06 22:30:42','Current score is 5'),(124,5,'NEW HIT','2016-11-06 22:30:43','Current score is 6'),(125,5,'NEW HIT','2016-11-06 22:30:43','Current score is 7'),(126,5,'NEW HIT','2016-11-06 22:30:50','Current score is 8'),(127,5,'NEW HIT','2016-11-06 22:30:55','Current score is 9'),(128,5,'NEW HIT','2016-11-06 22:30:58','Current score is 10'),(129,5,'NEW HIT','2016-11-06 22:31:02','Current score is 11'),(130,5,'NEW HIT','2016-11-06 22:31:07','Current score is 12'),(131,5,'NEW HIT','2016-11-06 22:31:31','Current score is 13'),(132,5,'NEW HIT','2016-11-06 22:31:32','Current score is 14'),(133,5,'NEW HIT','2016-11-06 22:31:35','Current score is 15'),(134,5,'NEW HIT','2016-11-06 22:31:40','Current score is 16'),(135,5,'NEW HIT','2016-11-06 22:31:46','Current score is 17'),(136,5,'NEW HIT','2016-11-06 22:31:52','Current score is 18'),(137,5,'NEW HIT','2016-11-06 22:31:55','Current score is 19'),(138,5,'NEW HIT','2016-11-06 22:32:01','Current score is 20'),(139,5,'NEW HIT','2016-11-06 22:32:05','Current score is 21'),(140,5,'NEW HIT','2016-11-06 22:32:09','Current score is 22'),(141,5,'NEW HIT','2016-11-06 22:32:15','Current score is 23'),(142,5,'NEW HIT','2016-11-06 22:32:20','Current score is 24'),(143,5,'NEW HIT','2016-11-06 22:32:24','Current score is 25'),(144,5,'NEW HIT','2016-11-06 22:32:29','Current score is 26'),(145,5,'GAME FINISHED','2016-11-06 22:32:30','Final score is 26'),(146,5,'PLAYER LEFT GAME','2016-11-06 22:49:41','Final score is 26'),(147,6,'START GAME','2016-11-06 23:01:44','Game started'),(148,6,'NEW HIT','2016-11-06 23:01:49','Current score is 1'),(149,6,'NEW HIT','2016-11-06 23:01:53','Current score is 2'),(150,6,'NEW HIT','2016-11-06 23:01:53','Current score is 3'),(151,6,'NEW HIT','2016-11-06 23:01:57','Current score is 4'),(152,6,'NEW HIT','2016-11-06 23:02:00','Current score is 5'),(153,6,'NEW HIT','2016-11-06 23:02:02','Current score is 6'),(154,6,'NEW HIT','2016-11-06 23:02:07','Current score is 7'),(155,6,'NEW HIT','2016-11-06 23:02:10','Current score is 8'),(156,6,'NEW HIT','2016-11-06 23:02:14','Current score is 9'),(157,6,'NEW HIT','2016-11-06 23:02:18','Current score is 11'),(158,6,'NEW HIT','2016-11-06 23:02:18','Current score is 11'),(159,6,'NEW HIT','2016-11-06 23:02:20','Current score is 12'),(160,6,'NEW HIT','2016-11-06 23:02:20','Current score is 13'),(161,6,'NEW HIT','2016-11-06 23:02:22','Current score is 14'),(162,6,'NEW HIT','2016-11-06 23:02:25','Current score is 15'),(163,6,'NEW HIT','2016-11-06 23:02:26','Current score is 17'),(164,6,'NEW HIT','2016-11-06 23:02:26','Current score is 17'),(165,6,'NEW HIT','2016-11-06 23:02:27','Current score is 18'),(166,6,'NEW HIT','2016-11-06 23:02:33','Current score is 19'),(167,6,'NEW HIT','2016-11-06 23:02:39','Current score is 20'),(168,6,'NEW HIT','2016-11-06 23:02:41','Current score is 21'),(169,6,'NEW HIT','2016-11-06 23:02:47','Current score is 23'),(170,6,'NEW HIT','2016-11-06 23:02:47','Current score is 24'),(171,6,'NEW HIT','2016-11-06 23:02:47','Current score is 24'),(172,6,'NEW HIT','2016-11-06 23:02:48','Current score is 25'),(173,6,'NEW HIT','2016-11-06 23:02:51','Current score is 26'),(174,6,'NEW HIT','2016-11-06 23:02:56','Current score is 27'),(175,6,'NEW HIT','2016-11-06 23:02:59','Current score is 28'),(176,6,'NEW HIT','2016-11-06 23:03:03','Current score is 29'),(177,6,'NEW HIT','2016-11-06 23:03:03','Current score is 30'),(178,6,'NEW HIT','2016-11-06 23:03:07','Current score is 31'),(179,6,'NEW HIT','2016-11-06 23:03:14','Current score is 32'),(180,6,'NEW HIT','2016-11-06 23:03:16','Current score is 33'),(181,6,'NEW HIT','2016-11-06 23:03:19','Current score is 34'),(182,6,'NEW HIT','2016-11-06 23:03:19','Current score is 36'),(183,6,'NEW HIT','2016-11-06 23:03:19','Current score is 36'),(184,6,'NEW HIT','2016-11-06 23:03:22','Current score is 37'),(185,6,'NEW HIT','2016-11-06 23:03:26','Current score is 38'),(186,6,'NEW HIT','2016-11-06 23:03:27','Current score is 39'),(187,6,'NEW HIT','2016-11-06 23:03:27','Current score is 40'),(188,6,'NEW HIT','2016-11-06 23:03:31','Current score is 41'),(189,6,'NEW HIT','2016-11-06 23:03:34','Current score is 42'),(190,6,'NEW HIT','2016-11-06 23:03:36','Current score is 43'),(191,6,'NEW HIT','2016-11-06 23:03:39','Current score is 44'),(192,6,'NEW HIT','2016-11-06 23:03:43','Current score is 45'),(193,6,'GAME FINISHED','2016-11-06 23:03:43','Final score is 45'),(194,6,'NEW HIT','2016-11-07 05:49:26','Current score is 1'),(195,6,'NEW HIT','2016-11-07 05:49:30','Current score is 2'),(196,6,'NEW HIT','2016-11-07 05:49:35','Current score is 3'),(197,6,'NEW HIT','2016-11-07 05:49:36','Current score is 4'),(198,6,'NEW HIT','2016-11-07 05:49:42','Current score is 5'),(199,6,'NEW HIT','2016-11-07 05:49:43','Current score is 6'),(200,6,'NEW HIT','2016-11-07 05:49:55','Current score is 7'),(201,6,'NEW HIT','2016-11-07 05:49:58','Current score is 8'),(202,6,'NEW HIT','2016-11-07 05:50:02','Current score is 9'),(203,6,'NEW HIT','2016-11-07 05:50:03','Current score is 10'),(204,6,'NEW HIT','2016-11-07 05:50:07','Current score is 11'),(205,6,'NEW HIT','2016-11-07 05:50:10','Current score is 12'),(206,6,'NEW HIT','2016-11-07 05:50:10','Current score is 13'),(207,6,'NEW HIT','2016-11-07 05:50:15','Current score is 14'),(208,6,'NEW HIT','2016-11-07 05:50:19','Current score is 15'),(209,6,'NEW HIT','2016-11-07 05:50:25','Current score is 16'),(210,6,'NEW HIT','2016-11-07 05:50:29','Current score is 17'),(211,6,'NEW HIT','2016-11-07 05:50:36','Current score is 18'),(212,6,'NEW HIT','2016-11-07 05:50:41','Current score is 19'),(213,6,'NEW HIT','2016-11-07 05:50:45','Current score is 20'),(214,6,'NEW HIT','2016-11-07 05:50:47','Current score is 22'),(215,6,'NEW HIT','2016-11-07 05:50:47','Current score is 22'),(216,6,'NEW HIT','2016-11-07 05:50:51','Current score is 23'),(217,6,'NEW HIT','2016-11-07 05:50:51','Current score is 24'),(218,6,'NEW HIT','2016-11-07 05:51:08','Current score is 25'),(219,6,'NEW HIT','2016-11-07 05:51:12','Current score is 26'),(220,6,'NEW HIT','2016-11-07 05:51:13','Current score is 27'),(221,6,'NEW HIT','2016-11-07 05:51:17','Current score is 28'),(222,6,'NEW HIT','2016-11-07 05:51:21','Current score is 29'),(223,6,'GAME FINISHED','2016-11-07 05:51:22','Final score is 29');
+UNLOCK TABLES;
+
 COMMIT;
