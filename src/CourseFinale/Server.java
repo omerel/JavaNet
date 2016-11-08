@@ -203,8 +203,8 @@ public class Server extends Application {
 		private int clientNo;
 		private int currentGame;
 		private int currentScore;
-		private String currentLevel;
-		private String currentMode;
+		private String currentLevel = null;
+		private String currentMode = null;
 		private String userName;
 		private int userId;
 		private DataInputStream inputFromClient;
@@ -286,9 +286,9 @@ public class Server extends Application {
 						case EXIT:
 							// TODO method clean the user from the system
 							updateScore(currentGame, currentScore);
-							addEvent(currentGame, "PLAYER LEFT GAME", "Final score is " + currentScore);
 							Platform.runLater(() -> {
-								taLog.appendText("client(" + clientNo + ") was exit!!!!");
+								int eventId = addEvent(currentGame, "PLAYER LEFT GAME", "Final score is " + currentScore);
+								taLog.appendText("Event #" + eventId + ": Client(" + clientNo + ") has quit!!!!");
 							});
 							break;
 						case GET_LEVEL_AND_MODE:
@@ -307,17 +307,17 @@ public class Server extends Application {
 							// save final result
 							Platform.runLater(() -> {
 								// Update score in DB
-								addEvent(currentGame, "GAME FINISHED", "Final score is " + currentScore);
+								int eventId = addEvent(currentGame, "GAME FINISHED", "Final score is " + currentScore);
 								updateScore(currentGame, currentScore);
-								taLog.appendText("client(" + clientNo + ") finished the game "
+								taLog.appendText("Event #"+eventId + ": Client(" + clientNo + ") finished the game "
 										+ "final score is:" + currentScore + "\n");
 							});
 							break;
 						case GET_SCORE:
 							currentScore = inputFromClient.readInt();
 							Platform.runLater(() -> {
-								taLog.appendText("client(" + clientNo + ") new score is: " + currentScore + "\n");
-								addEvent(currentGame, "NEW HIT", "Current score is " + currentScore);
+								int eventId = addEvent(currentGame, "NEW HIT", "Current score is " + currentScore);
+								taLog.appendText("Event #" + eventId + ": Client(" + clientNo + ") new score is: " + currentScore + "\n");
 							});
 							break;
 						default:
@@ -340,19 +340,24 @@ public class Server extends Application {
 				outputToClient.flush();
 				outputToClient.writeInt(GET_LEVEL_AND_MODE);
 				outputToClient.flush();
-				outputToClient.writeInt(START_GAME);
 				// Make sure level and mode updated
+				while (currentLevel == null || currentMode == null) {
+					try {
+						wait(500);
+					} catch (InterruptedException e) {
+						//e.printStackTrace();
+					}
+				}
+
+				currentGame = addGame(currentScore, currentLevel, currentMode, userId);
+				outputToClient.writeInt(START_GAME);
+				
 				Platform.runLater(() -> {
-					int delay = 0;
-					taLog.appendText("client(" + clientNo + ") started new game at "
-							+ new Date().toString()+"\n");
+					taLog.appendText("client(" + clientNo + ") started new game #"
+							+ currentGame +" at " + new Date().toString()+"\n");
 					
-					if (currentLevel == null || currentMode == null)
-						delay = 500;
-					
-					new Timeline(new KeyFrame(Duration.millis(delay),
-					        ae -> currentGame = addGame(currentScore, currentLevel, currentMode, userId))).play();
-				});
+				});				
+				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -427,51 +432,68 @@ public class Server extends Application {
 	}
 	
 	private void populateQueriesList() {
-	      cbQueryList.getItems().add(SCORES_ASC, "User games");
-	      cbQueryList.getItems().add(SCORES_DESC, "User games scores desc");
-	      cbQueryList.getItems().add(ALL_GAMES, "All games scores desc");
-	      cbQueryList.getItems().add(RANKS, "Players ranks");
+	      cbQueryList.getItems().add(SCORES_ASC, "Detailed games");
+	      cbQueryList.getItems().add(SCORES_DESC, "Detatiled Games by Score");
+	      cbQueryList.getItems().add(ALL_GAMES, "Games");
+	      cbQueryList.getItems().add(RANKS, "Players Ranks");
 	      }
 	
 	  private void showContents(int query) {
+		  System.out.println(cbUserList.getSelectionModel().getSelectedIndex());
 		  try {
 			  String queryString = "";
+			  int player = cbUserList.getSelectionModel().getSelectedIndex() == -1 ? -1 : cbUserList.getSelectionModel().getSelectedItem().getKey(); 
 			  switch (query) {
 				  case SCORES_ASC: {
-					  queryString = "SELECT g.id AS Game, g.Level AS Level, g.startTime AS 'Start Time', e.eventType AS Event, e.eventTime AS 'Event Time', e.message AS Message, g.score AS Score"
-					  		+ "		FROM Games AS g, Events AS e"
-					  		+ "		WHERE e.game = g.id"
-					  		+ "		ORDER BY g.player, g.startTime, g.score, e.eventTime";
+					  if (player == -1 || player == 0)
+						  queryString = "SELECT p.name AS Player, g.id AS Game, g.Level AS Level, g.startTime AS 'Start Time', e.eventType AS Event, e.eventTime AS 'Event Time', e.message AS Message, g.score AS Score"
+						  		+ "		FROM Games AS g, Events AS e, Players AS p"
+						  		+ "		WHERE e.game = g.id AND g.player = p.id"
+						  		+ "		ORDER BY g.player, g.startTime, g.score, e.eventTime";
+					  else
+						  queryString = "SELECT p.name AS Player, g.id AS Game, g.Level AS Level, g.startTime AS 'Start Time', e.eventType AS Event, e.eventTime AS 'Event Time', e.message AS Message, g.score AS Score"
+							  		+ "		FROM Games AS g, Events AS e, Players AS p"
+							  		+ "		WHERE e.game = g.id AND g.player = p.id"
+							  		+ "			AND g.player = " + player
+							  		+ "		ORDER BY g.player, g.startTime, g.score, e.eventTime";
 					  
-					  System.out.println("SELECT g.id AS Game, g.Level AS Level, g.startTime AS 'Start Time', e.eventType AS Event, e.eventTime AS 'Event Time', e.message AS Message, g.score AS Score"
-						  		+ "		FROM Games AS g, Events AS e"
-						  		+ "		WHERE e.game = g.id"
-						  		+ "		ORDER BY g.player, g.startTime, g.score, e.eventTime");
+					  System.out.println(queryString);
 					  break;
 				  }
 				  case SCORES_DESC: {
-					  queryString = "SELECT g.id Game, g.Level Level, g.startTime 'Start Time', e.eventType Event, e.eventTime 'Event Time', e.message AS Message, g.score Score"
-						  		+ "	FROM Games AS g, Events AS e"
-						  		+ "	WHERE e.game = g.id"
-						  		+ "	ORDER BY g.player, g.score DESC, g.startTime, e.eventTime";
-					  System.out.println("SELECT g.id Game, g.Level Level, g.startTime 'Start Time', e.eventType Event, e.eventTime 'Event Time', e.message AS Message, g.score Score"
-						  		+ "	FROM Games AS g, Events AS e"
-						  		+ "	WHERE e.game = g.id");
+					  if (player == -1 || player == 0)
+						  queryString = "SELECT p.name AS Player, g.id Game, g.Level Level, g.startTime 'Start Time', e.eventType Event, e.eventTime 'Event Time', e.message AS Message, g.score Score"
+							  		+ "	FROM Games AS g, Events AS e, Players AS p"
+							  		+ "	WHERE e.game = g.id AND g.player = p.id"
+							  		+ "	ORDER BY g.player, g.score DESC, g.startTime, e.eventTime";
+					  else
+						  queryString = "SELECT p.name AS Player, g.id Game, g.Level Level, g.startTime 'Start Time', e.eventType Event, e.eventTime 'Event Time', e.message AS Message, g.score Score"
+							  		+ "	FROM Games AS g, Events AS e, Players AS p"
+							  		+ "	WHERE e.game = g.id AND g.player = p.id"
+							  		+ "		AND g.player = " + player
+							  		+ "	ORDER BY g.player, g.score DESC, g.startTime, e.eventTime";
+
+					  System.out.println(queryString);
 					  break;
 				  }
 				  case ALL_GAMES: {
-					  queryString = "SELECT p.name Player, g.id Game, g.level Level, g.mode Mode, g.startTime 'Start Time', g.score Score"
-						  		+ " FROM Players As p, Games AS g"
-						  		+ " WHERE p.id = g.player"
-						  		+ " ORDER BY g.score DESC";
-					  System.out.println("SELECT p.name Player, g.id Game, g.level Level, g.mode Mode, g.startTime 'Start Time', g.score Score"
-						  		+ " FROM Players As p, Games AS g, Events AS e"
-						  		+ " WHERE p.id = g.player"
-						  		+ " ORDER BY g.score DESC");
+					  if (player == -1 || player == 0)
+						  queryString = "SELECT p.name Player, g.id Game, g.level Level, g.mode Mode, g.startTime 'Start Time', g.score Score"
+							  		+ " FROM Players As p, Games AS g"
+							  		+ " WHERE p.id = g.player"
+							  		+ " ORDER BY g.score DESC";
+					  else
+						  queryString = "SELECT p.name Player, g.id Game, g.level Level, g.mode Mode, g.startTime 'Start Time', g.score Score"
+							  		+ " FROM Players As p, Games AS g"
+							  		+ " WHERE p.id = g.player"
+							  		+ "		AND g.player = " + player
+							  		+ " ORDER BY g.score DESC";
+
+					  System.out.println(queryString);
 					  break;
 				  }
 				  case RANKS: {
-					  queryString = "SELECT scores.name, AVG(scores.score)"
+					  queryString = "SELECT scores.name As Name, AVG(scores.score) AS Rank"
 					  		+ "	FROM"
 					  		+ "		(SELECT p.name AS name, g.id AS player, g.score,"
 					  		+ "			(SELECT COUNT(id) FROM Games) tot"
@@ -481,15 +503,7 @@ public class Server extends Application {
 					  		+ "			LIMIT 3) AS scores"
 					  		+ "	WHERE scores.tot >= 3";
 					  
-					  System.out.println("SELECT scores.name, AVG(scores.score)"
-						  		+ "	FROM"
-						  		+ "		(SELECT p.name AS name, g.id AS player, g.score,"
-						  		+ "			(SELECT COUNT(id) FROM Games) tot"
-						  		+ "			FROM Players AS p, Games g"
-						  		+ "			WHERE g.score >= 0 AND p.id = g.player"
-						  		+ "			ORDER BY g.score DESC"
-						  		+ "			LIMIT 3) AS scores"
-						  		+ "	WHERE scores.tot >= 3");
+					  System.out.println(queryString);
 					  break;
 				  }
 				  default:
@@ -550,7 +564,7 @@ public class Server extends Application {
 	    }
 	  }
 	  
-	  private void addEvent(int game, String type, String message) {
+	  private int addEvent(int game, String type, String message) {
 		  int id = 0;
 		  try {
 			  statement = connection.createStatement();
@@ -558,10 +572,7 @@ public class Server extends Application {
 			  ResultSet rsId = statement.executeQuery("SELECT MAX(id) AS max_id FROM Events");
 			  if (rsId.first())
 				  id = rsId.getInt("max_id") + 1;
-			  
-/*			  statement.execute("INSERT INTO Events"
-			  		+ "			VALUES("+ id + "," + game + ", '" + type + "',  NOW(), " + message +")");*/
-			  
+			  			  
 			  prepStmt = connection.prepareStatement("INSERT INTO Events"
 				  		+ "			VALUES(?, ?, ?, NOW(), ?)");
 			  prepStmt.setInt(1, id);
@@ -570,10 +581,12 @@ public class Server extends Application {
 			  prepStmt.setString(4, message);
 			  
 			  prepStmt.execute();
+			  
+			  return id;
 
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return -1;
 		}
 	  }
 	  
@@ -585,8 +598,6 @@ public class Server extends Application {
 			  if (rsId.first())
 				  id = rsId.getInt("max_id") + 1;
 			  
-			  /*			  statement.execute("INSERT INTO Games"
-		  		+ "			VALUES(" + id + ", " + player + ", '" + level + "', '" + mode + "', NOW(), " + score + ")"); */
 			  prepStmt = connection.prepareStatement("INSERT INTO Games"
 				  		+ "			VALUES(?, ?, ?, ?, NOW(), ?)");
 			  prepStmt.setInt(1, id);
@@ -600,7 +611,6 @@ public class Server extends Application {
 			  addEvent(id, "START GAME", "Game started");
 			  return id;
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return -1;
 		}
