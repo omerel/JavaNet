@@ -66,7 +66,6 @@ public class Server extends Application {
 	private ComboBox<KeyValPair> cbUserList;
 	private ComboBox<String> cbQueryList;
 	private Button btExit;
-	//private TextArea taQuery;
 	private TextArea taLog;
 	private TableView tvQuery;
 	private int clientNo = 0; // Number a client
@@ -96,14 +95,11 @@ public class Server extends Application {
 		cbUserList = new ComboBox<>();
 		cbQueryList = new ComboBox<>();
 		taLog = new TextArea();
-		//taQuery = new TextArea();
 		tvQuery = new TableView();
 
 		// Components properties
 		taLog.setEditable(false);
 		taLog.setMaxWidth(600);
-		/*taQuery.setEditable(false);
-		taQuery.setMaxWidth(380);*/
 		tvQuery.setEditable(false);
 		tvQuery.setMaxWidth(600);
 		lblTitle.setStyle("-fx-font: 30 arial;");
@@ -118,7 +114,6 @@ public class Server extends Application {
 		vbControl.setStyle("-fx-font: 18 arial;");
 
 		HBox hbcontrol = new HBox(10);
-		//hbcontrol.getChildren().addAll(vbControl, taQuery);
 		hbcontrol.getChildren().addAll(vbControl, tvQuery);
 		hbcontrol.setAlignment(Pos.CENTER);
 
@@ -303,8 +298,6 @@ public class Server extends Application {
 							StartGame();
 							break;
 						case QUIT_FROM_GAME:
-							// TODO stop time
-							// save final result
 							Platform.runLater(() -> {
 								// Update score in DB
 								int eventId = addEvent(currentGame, "GAME FINISHED", "Final score is " + currentScore);
@@ -442,7 +435,8 @@ public class Server extends Application {
 		  System.out.println(cbUserList.getSelectionModel().getSelectedIndex());
 		  try {
 			  String queryString = "";
-			  int player = cbUserList.getSelectionModel().getSelectedIndex() == -1 ? -1 : cbUserList.getSelectionModel().getSelectedItem().getKey(); 
+			  int player = cbUserList.getSelectionModel().getSelectedIndex() == -1 ? -1 : cbUserList.getSelectionModel().getSelectedItem().getKey();
+			  statement = connection.createStatement();
 			  switch (query) {
 				  case SCORES_ASC: {
 					  if (player == -1 || player == 0)
@@ -493,15 +487,21 @@ public class Server extends Application {
 					  break;
 				  }
 				  case RANKS: {
-					  queryString = "SELECT scores.name As Name, AVG(scores.score) AS Rank"
-					  		+ "	FROM"
-					  		+ "		(SELECT p.name AS name, g.id AS player, g.score,"
-					  		+ "			(SELECT COUNT(id) FROM Games) tot"
-					  		+ "			FROM Players AS p, Games g"
-					  		+ "			WHERE g.score >= 0 AND p.id = g.player"
-					  		+ "			ORDER BY g.score DESC"
-					  		+ "			LIMIT 3) AS scores"
-					  		+ "	WHERE scores.tot >= 3";
+					  statement.execute("SET @currcount = NULL, @currvalue = NULL");
+					  
+					  queryString = "SELECT p.name AS Name, AVG(ranked.score) AS Rank"
+						  		+ " FROM ("
+						  		+ "		SELECT id, score, player FROM ("
+						  		+ "			SELECT id, score, player,"
+						  		+ "			@currcount := IF(@currvalue = player, @currcount + 1, 1) AS rank,"
+						  		+ "			@currvalue := player AS curr"
+						  		+ "		FROM Games AS g"
+						  		+ "		ORDER BY player, score DESC"
+						  		+ "		) AS curr WHERE rank <= 3) AS ranked, Players AS p"
+						  		+ " WHERE 3 <= (SELECT count(id) FROM Games WHERE player = ranked.player)"
+						  		+ "		AND ranked.player = p.id"
+						  		+ " GROUP BY ranked.player"
+						  		+ " ORDER BY Rank DESC";
 					  
 					  System.out.println(queryString);
 					  break;
@@ -510,7 +510,6 @@ public class Server extends Application {
 					  break;
 			  }
 		  
-			  statement = connection.createStatement();
 			  ResultSet resultSet = statement.executeQuery(queryString);
 		      populateTableView(resultSet, tvQuery);
 		    } 

@@ -78,3 +78,31 @@ INSERT INTO `events` VALUES (1,1,'START GAME','2016-11-06 15:23:48','Game starte
 UNLOCK TABLES;
 
 COMMIT;
+
+SELECT p.name, AVG(g.score)
+FROM Players AS p, Games AS g
+WHERE p.id = g.player AND 3 <= (SELECT count(id) FROM Games WHERE player = p.id)
+GROUP BY p.name;
+
+
+SELECT scores.player, scores.score
+FROM  (SELECT g.player AS player, g.score AS score
+	FROM	Games g
+	WHERE	3 <= (SELECT count(id) FROM Games WHERE player = g.player)
+		AND g.player = p.id
+	ORDER BY player, score DESC) scores
+
+
+SET @currcount = NULL, @currvalue = NULL;
+SELECT ranked.player, AVG(ranked.score)
+FROM (
+	SELECT id, score, player FROM (
+		SELECT
+			id, score, player, 
+			@currcount := IF(@currvalue = player, @currcount + 1, 1) AS rank,
+			@currvalue := player AS curr
+		FROM Games AS g
+		ORDER BY player, score DESC
+	) AS curr WHERE rank <= 3) AS ranked
+WHERE 3 <= (SELECT count(id) FROM Games WHERE player = ranked.player)
+GROUP BY ranked.player
