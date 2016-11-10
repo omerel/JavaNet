@@ -230,7 +230,6 @@ public class Server extends Application {
 						taLog.appendText("Action cancelled, player was not removed\n");
 					});
 				}
-
 			}
 		});
 		
