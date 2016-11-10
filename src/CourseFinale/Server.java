@@ -14,9 +14,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
+import java.util.Optional;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -27,13 +26,17 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -63,6 +66,9 @@ public class Server extends Application {
 	private Scene scene;
 	private BorderPane pane;
 	private Button btCommit;
+	private Button btUpdateName;
+	private Button btRemovePlayer;
+	private Button btNewPlayer;
 	private ComboBox<KeyValPair> cbUserList;
 	private ComboBox<String> cbQueryList;
 	private Button btExit;
@@ -86,11 +92,13 @@ public class Server extends Application {
 
 		// Create components
 		Label lblTitle = new Label("Server side - Gun3D");
-		Label lblUser = new Label("Choose user from the list:");
-		Label lblQuery = new Label("Choose query from the list:");
+		Label lblUser = new Label("User:");
+		Label lblQuery = new Label("Query:");
 		Label lblServerLog = new Label("Server log:");
-		Label lblAdminRequest = new Label("Admin request:");
 		btCommit = new Button("Commit");
+		btUpdateName = new Button("Update Player");
+		btRemovePlayer = new Button("Remove Player");
+		btNewPlayer = new Button("New Player");
 		btExit = new Button("Exit");
 		cbUserList = new ComboBox<>();
 		cbQueryList = new ComboBox<>();
@@ -100,25 +108,35 @@ public class Server extends Application {
 		// Components properties
 		taLog.setEditable(false);
 		taLog.setMaxWidth(600);
+		taLog.setMaxHeight(250);
 		tvQuery.setEditable(false);
 		tvQuery.setMaxWidth(600);
+		tvQuery.setMaxHeight(250);
 		lblTitle.setStyle("-fx-font: 30 arial;");
 		lblServerLog.setStyle("-fx-font: 18 arial;");
-		lblAdminRequest.setStyle("-fx-font: 18 arial;");
 		btExit.setStyle("-fx-font: 18 arial;-fx-base: red;");
 
 		// create panes and order components in it
-		VBox vbControl = new VBox(10);
+		VBox vbControl = new VBox(5);
 		vbControl.getChildren().addAll(lblUser, cbUserList, lblQuery, cbQueryList, btCommit);
-		vbControl.setAlignment(Pos.CENTER);
+		vbControl.setAlignment(Pos.CENTER_LEFT);
 		vbControl.setStyle("-fx-font: 18 arial;");
+		
+		VBox vbUserManipulation = new VBox(5);
+		vbUserManipulation.getChildren().addAll(btUpdateName, btRemovePlayer, btNewPlayer);
+		vbUserManipulation.setAlignment(Pos.CENTER_RIGHT);
+		vbUserManipulation.setStyle("-fx-font: 18 arial;");
 
-		HBox hbcontrol = new HBox(10);
-		hbcontrol.getChildren().addAll(vbControl, tvQuery);
-		hbcontrol.setAlignment(Pos.CENTER);
+		HBox hbControl = new HBox(5);
+		hbControl.getChildren().addAll(vbControl, vbUserManipulation);
+		hbControl.setAlignment(Pos.CENTER);
+		
+		VBox vbcontrol = new VBox(5);
+		vbcontrol.getChildren().addAll(hbControl, tvQuery);
+		vbcontrol.setAlignment(Pos.CENTER);
 
-		VBox vbMainControl = new VBox(10);
-		vbMainControl.getChildren().addAll(lblAdminRequest, hbcontrol, lblServerLog, taLog, btExit);
+		VBox vbMainControl = new VBox(5);
+		vbMainControl.getChildren().addAll(vbcontrol, lblServerLog, taLog, btExit);
 		vbMainControl.setAlignment(Pos.CENTER);
 
 		// Create main pane
@@ -161,6 +179,64 @@ public class Server extends Application {
 		btCommit.setOnAction(e -> {
 			showContents(cbQueryList.getSelectionModel().getSelectedIndex());
 		});
+		
+		btUpdateName.setOnAction(e -> {
+			if (playerSelected("Update Player")) {
+				TextInputDialog dialog = new TextInputDialog(cbUserList.getSelectionModel().getSelectedItem().toString());
+				dialog.setTitle("Update Player");
+				dialog.setHeaderText("Please enter a new name for the player");
+				dialog.setContentText("New name:");
+	
+				Optional<String> result = dialog.showAndWait();
+				if (result.isPresent()){
+					String newName = result.get();
+					int key = cbUserList.getSelectionModel().getSelectedItem().getKey();
+					if (!isNameInDataBase(newName)) {
+						updatePlayer(key, newName);
+						Platform.runLater(() -> {
+							taLog.appendText("Player #" + key + " name was updated to: " + newName + '\n');
+							cbUserList.getItems().remove(cbUserList.getSelectionModel().getSelectedIndex());
+							cbUserList.getItems().add(new KeyValPair(key, newName));
+						});
+					}
+					else
+						alertDialog("Update Player", "The name is occupied, please choose a different name");
+				}
+				else
+					Platform.runLater(() -> {
+						taLog.appendText("Action cancelled, player name was not updated\n");
+					});
+			}
+			});
+		
+		btRemovePlayer.setOnAction(e -> {
+			if (playerSelected("Remove Player")) {
+				Alert alert = new Alert(AlertType.CONFIRMATION);
+				alert.setTitle("Remove Player");
+				alert.setHeaderText("Are you sure?");
+				alert.setContentText("Are you sure you would like to remove " + cbUserList.getSelectionModel().getSelectedItem().toString() + " from the game completely? "
+						+ "All his records and scores will be lost.\n"
+						+ "This action cannot be undone");
+
+				Optional<ButtonType> result = alert.showAndWait();
+				if (result.get() == ButtonType.OK){
+					int key = cbUserList.getSelectionModel().getSelectedItem().getKey();
+					removePlayer(key);
+					taLog.appendText("Player #" + key + ", " +
+							cbUserList.getSelectionModel().getSelectedItem() + " was removed from the game\n");
+					cbUserList.getItems().remove(cbUserList.getSelectionModel().getSelectedIndex());
+				} else {
+					Platform.runLater(() -> {
+						taLog.appendText("Action cancelled, player was not removed\n");
+					});
+				}
+
+			}
+		});
+		
+		btNewPlayer.setOnAction(e -> {
+			// TODO: implement MVC for starting new client
+		});
 		new Thread(() -> {
 			try { // Create a server socket
 				primaryServerSocket = new ServerSocket(8000);
@@ -190,6 +266,20 @@ public class Server extends Application {
 			} catch (IOException ex) {
 			}
 		}).start();
+	}
+	
+	private boolean playerSelected(String title)
+	{
+		if (cbUserList.getSelectionModel().getSelectedIndex() == -1) {
+			alertDialog(title, "Please choose a player");
+			return false;
+		}
+		else if (cbUserList.getSelectionModel().getSelectedIndex() == 0) {
+			alertDialog(title, "Cannot perform action on all players,\nPlease choose a specific player");
+			return false;
+		}
+		else
+			return true;
 	}
 
 	// Define the thread class for handling new connection
@@ -358,6 +448,14 @@ public class Server extends Application {
 		}
 	}
 
+	private void alertDialog(String title, String content) {
+		Alert alert = new Alert(AlertType.INFORMATION);
+		alert.setTitle(title);
+		alert.setHeaderText(null);
+		alert.setContentText(content);
+		alert.showAndWait();
+	}
+	
 	public class KeyValPair {
 
 		private final int key;
@@ -432,7 +530,6 @@ public class Server extends Application {
 	      }
 	
 	  private void showContents(int query) {
-		  System.out.println(cbUserList.getSelectionModel().getSelectedIndex());
 		  try {
 			  String queryString = "";
 			  int player = cbUserList.getSelectionModel().getSelectedIndex() == -1 ? -1 : cbUserList.getSelectionModel().getSelectedItem().getKey();
@@ -637,16 +734,52 @@ public class Server extends Application {
 	  
 	  private void updatePlayer(int id, String name) {
 		  try {
-			  statement = connection.createStatement();
+			  prepStmt = connection.prepareStatement("UPDATE Players"
+				  		+ "					SET name = ?"
+				  		+ "					WHERE id = ?");
+			  prepStmt.setString(1, name);
+			  prepStmt.setInt(2, id);
+			  
+			  prepStmt.execute();
+			  /*statement = connection.createStatement();
 			  statement.executeUpdate("UPDATE Players"
 			  		+ "					SET name = '" + name + "'"
 			  		+ "					WHERE id = " + id);
 			  System.out.println("UPDATE Players"
 			  		+ "					SET name = '" + name + "'"
-			  		+ "					WHERE id = " + id);
+			  		+ "					WHERE id = " + id);*/
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}		  
+	  }
+	  
+	  
+	  private void removePlayer(int id) {
+		  try {
+			  // Clear player's events
+			  prepStmt = connection.prepareStatement("DELETE FROM Events"
+				  		+ "					WHERE game IN ("
+				  		+ "						SELECT id"
+				  		+ "						FROM Games"
+				  		+ "						WHERE player = ?)");
+			  prepStmt.setInt(1, id);
+			  prepStmt.execute();
+			  
+			  // Clear player's games
+			  prepStmt = connection.prepareStatement("DELETE FROM Games"
+				  		+ "					WHERE player = ?");
+			  prepStmt.setInt(1, id);
+			  prepStmt.execute();
+			  
+			  // Remove player
+			  prepStmt = connection.prepareStatement("DELETE FROM Players"
+				  		+ "					WHERE id = ?");
+			  prepStmt.setInt(1, id);
+			  prepStmt.execute();
+			  
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	  }
 	  
 	  private void updateScore(int gameId, int score) {
