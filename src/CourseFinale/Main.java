@@ -55,19 +55,6 @@ import javafx.util.Duration;
 
 public class Main extends Application {
 
-	private static final int EXIT = -1;
-	private static final int START_GAME = 0;
-	private static final int GET_SCORE = 1;
-	private static final int CHANGE_NAME = 2;
-	private static final int CLOSE_USER = 3;
-	private static final int ACK = 4;
-	private static final int GET_LEVEL_AND_MODE = 5;
-	private static final int QUIT_FROM_GAME = 6;
-	private static final int TIMER = 7;
-	private static final String HARD = "Hard";
-	private static final String BEGINNER = "Beginner";
-	private static final String NORMAL = "Normal";
-	
 	private int request;
 
 	private Socket socket;
@@ -113,11 +100,11 @@ public class Main extends Application {
 		rbGame.setToggleGroup(tgGameMode);
 		Label lblLevel = new Label("Choose Level:");
 		tgGameLevel = new ToggleGroup();
-		btLevelGame1 = new ToggleButton(BEGINNER);
+		btLevelGame1 = new ToggleButton(Common.BEGINNER);
 		btLevelGame1.setToggleGroup(tgGameLevel);
-		btLevelGame2 = new ToggleButton(NORMAL);
+		btLevelGame2 = new ToggleButton(Common.NORMAL);
 		btLevelGame2.setToggleGroup(tgGameLevel);
-		btLevelGame3 = new ToggleButton(HARD);
+		btLevelGame3 = new ToggleButton(Common.HARD);
 		btLevelGame3.setToggleGroup(tgGameLevel);
 
 		btStartGame = new Button("Start");
@@ -171,7 +158,7 @@ public class Main extends Application {
 		btExit.setOnAction(e -> {
 			try {
 				toServer2.flush();
-				toServer2.writeInt(EXIT);
+				toServer2.writeInt(Common.EXIT);
 				socket.close();
 				socket2.close();
 				Platform.exit();
@@ -204,7 +191,7 @@ public class Main extends Application {
 			public void handle(WindowEvent event) {
 				try {
 					toServer2.flush();
-					toServer2.writeInt(EXIT);
+					toServer2.writeInt(Common.EXIT);
 					socket.close();
 					socket2.close();
 					Platform.exit();
@@ -281,7 +268,7 @@ public class Main extends Application {
 				if (checkValidation()) {
 					try {
 						toServer2.flush();
-						toServer2.writeInt(START_GAME);
+						toServer2.writeInt(Common.START_GAME);
 					} catch (Exception e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
@@ -294,26 +281,26 @@ public class Main extends Application {
 				try {
 					request = fromServer.readInt();
 					switch (request) {
-					case EXIT:
+					case Common.EXIT:
 						break;
-					case START_GAME:
+					case Common.START_GAME:
 						Platform.runLater(() -> {
 							game = new Game();
 						});
 						break;
-					case CHANGE_NAME:
+					case Common.CHANGE_NAME:
 						break;
-					case CLOSE_USER:
+					case Common.CLOSE_USER:
 						// TODO finish game
-						toServer2.writeInt(EXIT);
+						toServer2.writeInt(Common.EXIT);
 						socket2.close();
 						socket.close();
 						Platform.exit();
 						System.exit(0);
 						break;
-					case GET_LEVEL_AND_MODE:
+					case Common.GET_LEVEL_AND_MODE:
 						toServer2.flush();
-						toServer2.writeInt(GET_LEVEL_AND_MODE);
+						toServer2.writeInt(Common.GET_LEVEL_AND_MODE);
 						getCurrentLevel((ToggleButton) tgGameLevel.getSelectedToggle());
 						getCurrentMode();
 						toServer2.flush();
@@ -321,12 +308,12 @@ public class Main extends Application {
 						toServer2.flush();
 						toServer2.writeUTF(mMode);
 						break;
-					case QUIT_FROM_GAME:
+					case Common.QUIT_FROM_GAME:
 						Platform.runLater(() -> {
 							game.quitGame();
 						});
 						break;
-					case TIMER:
+					case Common.TIMER:
 						String time = fromServer.readUTF();
 						break;
 					default:
@@ -342,22 +329,22 @@ public class Main extends Application {
 
 	private String getCurrentMode() {
 		if (rbTrainig.isSelected()) {
-			mMode = "Training";
+			mMode = Common.TRAINING;
 			return mMode;
 		} else
-			mMode = "Game";
+			mMode = Common.GAME;
 		return mMode;
 	}
 
 	private String getCurrentLevel(ToggleButton tbGame) {
 		if (tbGame.equals(btLevelGame1)) {
-			mLevel = BEGINNER; // level 1
+			mLevel = Common.BEGINNER; // level 1
 			return mLevel;
 		} else if (tbGame.equals(btLevelGame2)) {
-			mLevel = NORMAL; // level 2
+			mLevel = Common.NORMAL; // level 2
 			return mLevel;
 		} else {
-			mLevel = HARD; // level 3
+			mLevel = Common.HARD; // level 3
 		}
 		return mLevel;
 	}
@@ -369,7 +356,7 @@ public class Main extends Application {
 	public void updateScore(int score) {
 		try {
 			toServer2.flush();
-			toServer2.writeInt(GET_SCORE);
+			toServer2.writeInt(Common.GET_SCORE);
 			toServer2.writeInt(score);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -467,14 +454,12 @@ public class Main extends Application {
 			game();
 
 			btQuitFromGame.setOnAction(e -> {
-				// TODO store score
 				stage.close();
 				primaryStage.show();
 				try {
 					toServer2.flush();
-					toServer2.writeInt(QUIT_FROM_GAME);
+					toServer2.writeInt(Common.QUIT_FROM_GAME);
 				} catch (Exception e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			});
@@ -520,7 +505,7 @@ public class Main extends Application {
 			primaryStage.show();
 			try {
 				toServer2.flush();
-				toServer2.writeInt(QUIT_FROM_GAME);
+				toServer2.writeInt(Common.QUIT_FROM_GAME);
 			} catch (Exception e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -567,13 +552,13 @@ public class Main extends Application {
 			Sphere mySphere;
 			
 			switch (mLevel){
-			case BEGINNER:
+			case Common.BEGINNER:
 				balloonRadious = 50;
 				break;
-			case NORMAL:
+			case Common.NORMAL:
 				balloonRadious = 30;
 				break;
-			case HARD:
+			case Common.HARD:
 				balloonRadious = 10;
 				break;
 				

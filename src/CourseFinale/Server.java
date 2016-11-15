@@ -47,15 +47,6 @@ import javafx.util.Duration;
 
 public class Server extends Application {
 
-	private static final int EXIT = -1;
-	private static final int START_GAME = 0;
-	private static final int GET_SCORE = 1;
-	private static final int CHANGE_NAME = 2;
-	private static final int CLOSE_USER = 3;
-	private static final int ACK = 4;
-	private static final int GET_LEVEL_AND_MODE = 5;
-	private static final int QUIT_FROM_GAME = 6;
-	private static final int TIMER = 7;
 
 	private ServerSocket primaryServerSocket;
 	private Socket primarySocket;
@@ -367,15 +358,16 @@ public class Server extends Application {
 						int request = inputFromClient.readInt();
 
 						switch (request) {
-						case EXIT:
-							// TODO method clean the user from the system
-							updateScore(currentGame, currentScore);
-							Platform.runLater(() -> {
-								int eventId = addEvent(currentGame, "PLAYER LEFT GAME", "Final score is " + currentScore);
-								taLog.appendText("Event #" + eventId + ": Client(" + clientNo + ") has quit!!!!");
-							});
+						case Common.EXIT:
+							if (currentMode == Common.GAME) {
+								updateScore(currentGame, currentScore);
+								Platform.runLater(() -> {
+									int eventId = addEvent(currentGame, "PLAYER LEFT GAME", "Final score is " + currentScore);
+									taLog.appendText("Event #" + eventId + ": Client(" + clientNo + ") has quit!!!!");
+								});
+							}
 							break;
-						case GET_LEVEL_AND_MODE:
+						case Common.GET_LEVEL_AND_MODE:
 							currentLevel = inputFromClient.readUTF();
 							currentMode = inputFromClient.readUTF();
 							Platform.runLater(() -> {
@@ -383,24 +375,28 @@ public class Server extends Application {
 										+ currentMode + " mode\n");
 							});
 							break;
-						case START_GAME:
+						case Common.START_GAME:
 							StartGame();
 							break;
-						case QUIT_FROM_GAME:
-							Platform.runLater(() -> {
-								// Update score in DB
-								int eventId = addEvent(currentGame, "GAME FINISHED", "Final score is " + currentScore);
-								updateScore(currentGame, currentScore);
-								taLog.appendText("Event #"+eventId + ": Client(" + clientNo + ") finished the game "
-										+ "final score is:" + currentScore + "\n");
-							});
+						case Common.QUIT_FROM_GAME: {
+							if (currentMode == Common.GAME)
+								Platform.runLater(() -> {
+									// Update score in DB
+									int eventId = addEvent(currentGame, "GAME FINISHED", "Final score is " + currentScore);
+									updateScore(currentGame, currentScore);
+									taLog.appendText("Event #"+eventId + ": Client(" + clientNo + ") finished the game "
+											+ "final score is:" + currentScore + "\n");
+								});
+							outputToClient.writeInt(Common.EXIT);
+							}
 							break;
-						case GET_SCORE:
+						case Common.GET_SCORE:
 							currentScore = inputFromClient.readInt();
-							Platform.runLater(() -> {
-								int eventId = addEvent(currentGame, "NEW HIT", "Current score is " + currentScore);
-								taLog.appendText("Event #" + eventId + ": Client(" + clientNo + ") new score is: " + currentScore + "\n");
-							});
+							if (currentMode == Common.GAME) 
+								Platform.runLater(() -> {
+									int eventId = addEvent(currentGame, "NEW HIT", "Current score is " + currentScore);
+									taLog.appendText("Event #" + eventId + ": Client(" + clientNo + ") new score is: " + currentScore + "\n");
+								});
 							break;
 						default:
 							break;
@@ -408,7 +404,6 @@ public class Server extends Application {
 						}
 					}
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -417,31 +412,34 @@ public class Server extends Application {
 		private void StartGame() {
 			currentScore = 0;
 			try {
-
-				// Start game
 				outputToClient.flush();
-				outputToClient.writeInt(GET_LEVEL_AND_MODE);
+				outputToClient.writeInt(Common.GET_LEVEL_AND_MODE);
 				outputToClient.flush();
-				// Make sure level and mode updated
+				
+/*				// Make sure level and mode updated
 				while (currentLevel == null || currentMode == null) {
 					try {
 						wait(500);
 					} catch (InterruptedException e) {
 						//e.printStackTrace();
 					}
-				}
-
-				currentGame = addGame(currentScore, currentLevel, currentMode, userId);
-				outputToClient.writeInt(START_GAME);
+				}*/
 				
+				// Make sure level and mode updated
+				while (currentLevel == null || currentMode == null);
+
+				if (currentMode == Common.GAME)
+					currentGame = addGame(currentScore, currentLevel, currentMode, userId);
+
+				outputToClient.writeInt(Common.START_GAME);
+			
 				Platform.runLater(() -> {
 					taLog.appendText("client(" + clientNo + ") started new game #"
-							+ currentGame +" at " + new Date().toString()+"\n");
+							+ currentGame +" in " + currentMode + " mode at " + new Date().toString()+"\n");
 					
 				});				
 				
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -685,6 +683,17 @@ public class Server extends Application {
 		}
 	  }
 	  
+	  private void updateScore(int gameId, int score) {
+		  try {
+			  statement = connection.createStatement();
+			  statement.executeUpdate("UPDATE Games"
+			  		+ "					SET score = " + score
+			  		+ "					WHERE id = " + gameId);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	  }
+	  
 	  private int addGame(int score, String level, String mode, int player){
 		  int id = 0;
 		  try {
@@ -740,13 +749,6 @@ public class Server extends Application {
 			  prepStmt.setInt(2, id);
 			  
 			  prepStmt.execute();
-			  /*statement = connection.createStatement();
-			  statement.executeUpdate("UPDATE Players"
-			  		+ "					SET name = '" + name + "'"
-			  		+ "					WHERE id = " + id);
-			  System.out.println("UPDATE Players"
-			  		+ "					SET name = '" + name + "'"
-			  		+ "					WHERE id = " + id);*/
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}		  
@@ -781,17 +783,6 @@ public class Server extends Application {
 		}
 	  }
 	  
-	  private void updateScore(int gameId, int score) {
-		  try {
-			  statement = connection.createStatement();
-			  statement.executeUpdate("UPDATE Games"
-			  		+ "					SET score = " + score
-			  		+ "					WHERE id = " + gameId);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	  }
-	
 	public static void main(String[] args) {
 		launch(args);
 	}
