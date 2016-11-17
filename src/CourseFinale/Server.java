@@ -145,8 +145,10 @@ public class Server extends Application {
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 			public void handle(WindowEvent event) {
 				try {
-					if (connection != null && !connection.isClosed())
+					if (connection != null && !connection.isClosed()) {
 						connection.close();
+					    System.out.println("Database disconnected");
+					}
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
@@ -155,11 +157,13 @@ public class Server extends Application {
 			}
 		});
 
-		// actions
+		// Button Actions
 		btExit.setOnAction(e -> {
 			try {
-				if (connection != null && !connection.isClosed())
+				if (connection != null && !connection.isClosed()) {
 					connection.close();
+					System.out.println("Database disconnected");
+				}
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
@@ -176,7 +180,7 @@ public class Server extends Application {
 				TextInputDialog dialog = new TextInputDialog(cbUserList.getSelectionModel().getSelectedItem().toString());
 				dialog.setTitle("Update Player");
 				dialog.setHeaderText("Please enter a new name for the player");
-				dialog.setContentText("New name:");
+				dialog.setContentText(null);
 	
 				Optional<String> result = dialog.showAndWait();
 				if (result.isPresent()){
@@ -300,11 +304,15 @@ public class Server extends Application {
 				outputToClient = new DataOutputStream(socket.getOutputStream());
 				Platform.runLater(() -> {
 					taLog.appendText(
-							"Waiting from client(" + this.clientNo + ") to send a new user name to aprove...\n");
+							"Waiting from client(" + this.clientNo + ") to send a new user name to approve...\n");
 				});
 				while (true) {
 					// get from the client potential user name
 					userName = inputFromClient.readUTF();
+					if (userName.equals(Common.EXIT)) {
+						taLog.appendText("Client(" + this.clientNo + ") has left the building\n");
+						break;
+					}
 					if (!isNameInDataBase(userName)) {
 						userId = addPlayer(userName);
 						// Send client boolean answer
@@ -323,7 +331,8 @@ public class Server extends Application {
 					}
 				}
 
-				StartGame();
+				if (!userName.equals(Common.EXIT))
+					StartGame();
 
 			} catch (SocketException ex) {
 				try {
@@ -402,6 +411,9 @@ public class Server extends Application {
 							break;
 
 						}
+						
+						if (request == Common.EXIT)
+							break;
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -415,16 +427,7 @@ public class Server extends Application {
 				outputToClient.flush();
 				outputToClient.writeInt(Common.GET_LEVEL_AND_MODE);
 				outputToClient.flush();
-				
-/*				// Make sure level and mode updated
-				while (currentLevel == null || currentMode == null) {
-					try {
-						wait(500);
-					} catch (InterruptedException e) {
-						//e.printStackTrace();
-					}
-				}*/
-				
+
 				// Make sure level and mode updated
 				while (currentLevel == null || currentMode == null);
 
@@ -545,7 +548,6 @@ public class Server extends Application {
 							  		+ "			AND g.player = " + player
 							  		+ "		ORDER BY g.player, g.startTime, g.score, e.eventTime";
 					  
-					  System.out.println(queryString);
 					  break;
 				  }
 				  case SCORES_DESC: {
@@ -561,7 +563,6 @@ public class Server extends Application {
 							  		+ "		AND g.player = " + player
 							  		+ "	ORDER BY g.player, g.score DESC, g.startTime, e.eventTime";
 
-					  System.out.println(queryString);
 					  break;
 				  }
 				  case ALL_GAMES: {
@@ -577,7 +578,6 @@ public class Server extends Application {
 							  		+ "		AND g.player = " + player
 							  		+ " ORDER BY g.score DESC";
 
-					  System.out.println(queryString);
 					  break;
 				  }
 				  case RANKS: {
@@ -597,7 +597,6 @@ public class Server extends Application {
 						  		+ " GROUP BY ranked.player"
 						  		+ " ORDER BY Rank DESC";
 					  
-					  System.out.println(queryString);
 					  break;
 				  }
 				  default:
