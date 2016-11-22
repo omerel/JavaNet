@@ -59,7 +59,6 @@ public class Server extends Application {
 	private Button btCommit;
 	private Button btUpdateName;
 	private Button btRemovePlayer;
-	private Button btNewPlayer;
 	private ComboBox<KeyValPair> cbUserList;
 	private ComboBox<String> cbQueryList;
 	private Button btExit;
@@ -89,7 +88,6 @@ public class Server extends Application {
 		btCommit = new Button("Commit");
 		btUpdateName = new Button("Update Player");
 		btRemovePlayer = new Button("Remove Player");
-		btNewPlayer = new Button("New Player");
 		btExit = new Button("Exit");
 		cbUserList = new ComboBox<>();
 		cbQueryList = new ComboBox<>();
@@ -114,7 +112,7 @@ public class Server extends Application {
 		vbControl.setStyle("-fx-font: 18 arial;");
 		
 		VBox vbUserManipulation = new VBox(5);
-		vbUserManipulation.getChildren().addAll(btUpdateName, btRemovePlayer, btNewPlayer);
+		vbUserManipulation.getChildren().addAll(btUpdateName, btRemovePlayer);
 		vbUserManipulation.setAlignment(Pos.CENTER_RIGHT);
 		vbUserManipulation.setStyle("-fx-font: 18 arial;");
 
@@ -228,9 +226,6 @@ public class Server extends Application {
 			}
 		});
 		
-		btNewPlayer.setOnAction(e -> {
-			// TODO: implement MVC for starting new client
-		});
 		new Thread(() -> {
 			try { // Create a server socket
 				primaryServerSocket = new ServerSocket(8000);

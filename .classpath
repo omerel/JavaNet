@@ -5,5 +5,7 @@
 	<classpathentry kind="lib" path="D:/Programming/Workspace/JavaNet/lib/j3d-core-1.3.1.jar"/>
 	<classpathentry kind="lib" path="D:/Programming/Workspace/JavaNet/lib/vecmath-1.5.1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="C:/Program Files/Java/jre1.8.0_111/lib/ext/jfxrt.jar"/>
+	<classpathentry kind="lib" path="D:/Programming/Workspace/JavaNet/lib/jfxrt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
