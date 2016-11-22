@@ -20,7 +20,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.geometry.InsetsBuilder;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -79,7 +78,6 @@ public class Main extends Application {
 	private String mUserName;
 	private String mMode;
 	private String mLevel;
-	private int mCurrentScore;
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -320,7 +318,6 @@ public class Main extends Application {
 						break;
 					}
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
