@@ -1,0 +1,9 @@
+package CourseFinale;
+
+public class Model {
+
+	private Player player;
+	public Model(Player player) {
+		this.player = new Player(player);
+	}
+}
